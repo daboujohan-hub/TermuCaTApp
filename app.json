@@ -8,11 +8,25 @@
     "scheme": "termchatapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.aboudev.TermChatApp"
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "package": "com.aboudev.TermChatApp"
+      "package": "com.aboudev.TermChatApp",
+      "softwareKeyboardLayoutMode": "pan",
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -23,11 +37,34 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#FFFFFF",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 300
         }
-      ]
+      ],
+      "expo-image",
+      "expo-web-browser",
+      "expo-asset",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Autoriser TermChat à accéder au micro pour enregistrer des messages vocaux."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Autoriser TermChat à accéder à votre position pour localiser les écoles à proximité."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Autoriser TermChat à accéder à tes photos pour changer ta photo de profil."
+        }
+      ],
+      "expo-secure-store",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -36,8 +73,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "4e2cf252-e9c9-40e6-96d0-1461c8834ca3"
+        "projectId": "362ce973-792a-45c8-8b0c-ec196416f9b2"
       }
-    }
+    },
+    "owner": "abou2025s-team"
   }
 }

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="TermChat Premium — abonnement, paiements et informations officielles.">
+<meta name="theme-color" content="#0b63ce">
+<title>TermChat — Premium</title>
+<style>
+:root{
+  --blue:#0b63ce;--blue2:#084b9f;--ink:#132238;--muted:#667085;
+  --bg:#f5f8fc;--card:#fff;--line:#e5eaf1;--green:#16803c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+a{color:inherit}
+header{background:linear-gradient(135deg,#0757b8,#0b63ce 55%,#1885ff);color:#fff}
+.nav{max-width:1050px;margin:auto;padding:18px 22px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:22px;font-weight:800}.brand span{opacity:.75}
+.nav a{text-decoration:none;margin-left:18px;font-size:14px}
+.hero{max-width:1050px;margin:auto;padding:70px 22px 75px;display:grid;grid-template-columns:1.2fr .8fr;gap:35px;align-items:center}
+.badge{display:inline-block;background:#ffffff20;border:1px solid #ffffff45;padding:7px 12px;border-radius:999px;font-size:13px}
+h1{font-size:48px;line-height:1.08;margin:18px 0 15px}
+.hero p{font-size:18px;color:#e7f0ff;max-width:650px}
+.btn{display:inline-block;border:0;border-radius:12px;padding:13px 18px;font-weight:700;text-decoration:none;cursor:pointer}
+.btn.white{background:#fff;color:var(--blue)}.btn.dark{background:var(--ink);color:#fff}
+.hero-card{background:#fff;color:var(--ink);padding:28px;border-radius:22px;box-shadow:0 20px 60px #063b7d40}
+.price{font-size:38px;font-weight:850}.price small{font-size:15px;color:var(--muted)}
+main{max-width:1050px;margin:auto;padding:35px 22px 70px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:25px;box-shadow:0 5px 22px #12233b08}
+.card h2{margin-top:0}.muted{color:var(--muted)}
+.check{padding-left:0;list-style:none}.check li{margin:10px 0}.check li:before{content:"✓";color:var(--green);font-weight:800;margin-right:9px}
+.steps{counter-reset:s}.step{position:relative;padding-left:48px;margin:20px 0}.step:before{counter-increment:s;content:counter(s);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:#e8f1ff;color:var(--blue);display:grid;place-items:center;font-weight:800}
+.number{font-size:27px;font-weight:850;letter-spacing:.5px;background:#eef5ff;border:1px dashed #9fc2f4;padding:14px;border-radius:12px;display:inline-block}
+.notice{background:#fff8e6;border:1px solid #f4d27c;padding:14px;border-radius:12px;color:#664d03}
+details{border-top:1px solid var(--line);padding:15px 0}summary{font-weight:750;cursor:pointer}
+section{scroll-margin-top:20px}.full{margin-top:20px}
+footer{background:#101b2a;color:#cbd5e1;padding:35px 22px}
+.footer-in{max-width:1050px;margin:auto}.footer-links{display:flex;gap:18px;flex-wrap:wrap;margin-top:15px}.footer-links a{color:#fff;text-decoration:none}
+.small{font-size:13px;color:#8fa0b5}
+@media(max-width:760px){.hero{grid-template-columns:1fr;padding-top:45px}.hero-card{order:2}h1{font-size:38px}.grid{grid-template-columns:1fr}.nav a{display:none}}
+</style>
+
+<style id="termchat-premium-v2">
+:root{--bg:#050812;--text:#f6f8ff;--muted:#aeb8cc;--border:rgba(255,255,255,.1)}
+html{scroll-behavior:smooth}body{background:radial-gradient(circle at 15% 10%,rgba(91,140,255,.16),transparent 28%),radial-gradient(circle at 85% 20%,rgba(166,108,255,.13),transparent 30%),var(--bg)!important;color:var(--text);overflow-x:hidden}
+.tc-aurora{position:fixed;inset:-25%;z-index:-2;pointer-events:none;filter:blur(65px);opacity:.55;background:radial-gradient(circle at 25% 30%,rgba(32,230,165,.18),transparent 18%),radial-gradient(circle at 75% 25%,rgba(91,140,255,.2),transparent 20%),radial-gradient(circle at 50% 80%,rgba(166,108,255,.16),transparent 22%);animation:tcDrift 18s ease-in-out infinite alternate}
+.tc-grid{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.2;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px}
+.tc-orb{position:fixed;border-radius:50%;pointer-events:none;z-index:-1}.tc-orb.a{width:180px;height:180px;background:rgba(32,230,165,.08);top:20%;left:-70px;animation:tcFloatA 13s ease-in-out infinite}.tc-orb.b{width:220px;height:220px;background:rgba(91,140,255,.08);right:-90px;top:52%;animation:tcFloatB 16s ease-in-out infinite}
+@keyframes tcDrift{from{transform:translate(-2%,0) scale(1)}to{transform:translate(3%,2%) scale(1.08)}}@keyframes tcFloatA{0%,100%{transform:translate(0,0)}50%{transform:translate(60px,100px)}}@keyframes tcFloatB{0%,100%{transform:translate(0,0)}50%{transform:translate(-70px,-80px)}}
+.tc-payment-shell{max-width:1080px;margin:0 auto;padding:18px 14px 60px}.tc-brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}.tc-brand-mark{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;font-weight:900;color:white;background:linear-gradient(135deg,#5b8cff,#9a64ff);box-shadow:0 0 30px rgba(91,140,255,.35)}.tc-brand-title{font-size:20px;font-weight:850}.tc-brand-sub{font-size:12px;color:var(--muted)}
+.tc-hero{position:relative;overflow:hidden;text-align:center;padding:42px 20px 34px;border:1px solid var(--border);border-radius:30px;background:linear-gradient(145deg,rgba(14,25,48,.8),rgba(7,12,25,.68));box-shadow:0 25px 80px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(20px)}.tc-hero h1{font-size:clamp(30px,7vw,54px);line-height:1.02;margin:17px 0 12px}.tc-hero p{max-width:650px;margin:auto;color:var(--muted);line-height:1.65}.tc-badge{display:inline-flex;padding:8px 12px;border-radius:999px;background:rgba(91,140,255,.1);border:1px solid rgba(91,140,255,.24);color:#c9d7ff;font-size:12px;font-weight:750}
+.tc-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:20px}.tc-card{border:1px solid var(--border);border-radius:24px;padding:22px;background:rgba(10,18,35,.72);backdrop-filter:blur(18px);box-shadow:0 20px 55px rgba(0,0,0,.22)}.tc-card.premium{border-color:rgba(91,140,255,.28)}.tc-card.donation{border-color:rgba(32,230,165,.2)}.tc-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px}.tc-card h2{margin:0;font-size:22px}.small{color:var(--muted);font-size:13px}.tc-price{font-size:36px;font-weight:900;margin:15px 0 2px}.tc-price span{font-size:14px;font-weight:600;color:var(--muted)}.tc-features{list-style:none;padding:0;margin:18px 0}.tc-features li{padding:9px 0;color:#dce3f1;font-size:14px}.tc-features li:before{content:"✓";color:#63d6ff;font-weight:900;margin-right:9px}
+.tc-pay-logo{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-weight:950;font-size:13px;position:relative}.tc-pay-logo:after{content:"";position:absolute;inset:-6px;border-radius:20px;z-index:-1;filter:blur(12px);opacity:.42;animation:tcGlow 2.8s ease-in-out infinite}.wave{background:#062b24;color:#20e6a5;border:1px solid rgba(32,230,165,.5);box-shadow:0 0 20px rgba(32,230,165,.18)}.wave:after{background:#20e6a5}.moov{background:#322b08;color:#ffd84a;border:1px solid rgba(255,216,74,.48);box-shadow:0 0 20px rgba(255,216,74,.15)}.moov:after{background:#ffd84a}@keyframes tcGlow{50%{transform:scale(1.08);opacity:.7}}
+.tc-number{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:13px 14px;border-radius:15px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.08);font-weight:800;letter-spacing:.8px}.tc-copy{border:0;border-radius:10px;padding:8px 11px;background:rgba(255,255,255,.09);color:white;font-weight:750}.tc-security{margin-top:20px;padding:16px;border-radius:18px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);color:#cbd4e5;font-size:13px;line-height:1.6}
+.tc-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px}.tc-step{padding:15px;border-radius:17px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025)}.tc-step b{display:block;margin-bottom:5px}.tc-step span{color:var(--muted);font-size:12px;line-height:1.45}
+@media(max-width:720px){.tc-grid2{grid-template-columns:1fr}.tc-flow{grid-template-columns:repeat(2,1fr)}.tc-hero{padding:32px 16px 28px;border-radius:24px}.tc-card{padding:18px;border-radius:20px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body>
+<section class="tc-payment-shell" aria-label="Paiement TermChat">
+<div class="tc-brand"><div class="tc-brand-mark">TC</div><div><div class="tc-brand-title">TermChat</div><div class="tc-brand-sub">Paiement sécurisé • AbouDev Labs</div></div></div>
+<div class="tc-hero"><div class="tc-badge">✦ TERMCHAT PREMIUM</div><h1>Plus de possibilités.<br>Plus de liberté.</h1><p>Un abonnement qui aide à financer les serveurs, la sécurité, la maintenance et le développement continu de TermChat.</p></div>
+<div class="tc-grid2">
+<article class="tc-card premium"><div class="tc-card-head"><div><div class="small">ABONNEMENT</div><h2>TermChat Premium</h2></div><div class="tc-pay-logo wave">WAVE</div></div><div class="tc-price">5 000 <span>FCFA / 5 mois</span></div><ul class="tc-features"><li>Plus de contacts et limites renforcées</li><li>Messages plus longs</li><li>Davantage de fichiers</li><li>Fonctionnalités Premium actuelles et futures</li></ul><div class="tc-number"><span>0170404109</span><button class="tc-copy" onclick="navigator.clipboard?.writeText('0170404109')">Copier</button></div><div class="tc-security"><strong>🔐 Sécurité</strong><br>Ne communiquez jamais votre code PIN Mobile Money. TermChat ne vous le demandera jamais.</div></article>
+<article class="tc-card donation"><div class="tc-card-head"><div><div class="small">SOUTIEN INDÉPENDANT</div><h2>Faire un don</h2></div><div class="tc-pay-logo moov">MOOV</div></div><div class="tc-price">💚 <span>Votre soutien</span></div><ul class="tc-features"><li>Contribuer au développement de TermChat</li><li>Aider à créer de nouvelles communautés</li><li>Soutenir de petits projets et créateurs</li><li>Le don reste séparé de l'abonnement Premium</li></ul><div class="tc-number"><span>Numéro de don à configurer</span></div><div class="tc-security"><strong>💡 Important</strong><br>Un don ne déclenche pas automatiquement Premium.</div></article>
+</div>
+<div class="tc-flow"><div class="tc-step"><b>01 · Paiement</b><span>Effectuez le paiement correspondant à votre choix.</span></div><div class="tc-step"><b>02 · Détection</b><span>Le système vérifie le paiement reçu et sa référence.</span></div><div class="tc-step"><b>03 · Validation</b><span>La transaction est contrôlée avant activation.</span></div><div class="tc-step"><b>04 · Activation</b><span>Après confirmation, Premium est actif 5 mois.</span></div></div>
+</section>
+
+<header>
+  <nav class="nav">
+    <div class="brand">💬 TermChat <span>Premium</span></div>
+    <div><a href="#premium">Premium</a><a href="#paiement">Paiement</a><a href="#confidentialite">Confidentialité</a><a href="#faq">FAQ</a></div>
+  </nav>
+  <div class="hero">
+    <div>
+      <span class="badge">🇨🇮 Projet TermChat — AbouDev Labs</span>
+      <h1>TermChat Premium</h1>
+      <p>Une contribution pour maintenir, sécuriser et faire évoluer votre application de messagerie.</p>
+      <a class="btn white" href="#paiement">Voir le paiement</a>
+    </div>
+    <div class="hero-card" id="premium">
+      <div class="muted">Abonnement Premium</div>
+      <div class="price">5 000 FCFA <small>/ 5 mois</small></div>
+      <ul class="check">
+        <li>Plus de contacts</li>
+        <li>Messages plus longs</li>
+        <li>Plus de possibilités pour les fichiers</li>
+        <li>Limites augmentées</li>
+        <li>Futures fonctionnalités Premium</li>
+      </ul>
+      <a class="btn dark" href="#paiement">S'abonner</a>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="card">
+  <h2>Pourquoi un abonnement ?</h2>
+  <p>Une application de messagerie nécessite des ressources pour fonctionner dans la durée : serveurs, stockage, maintenance, sécurité, corrections et développement.</p>
+  <p>L'abonnement Premium aide TermChat à financer ces besoins et à continuer d'ajouter des fonctionnalités. Les fonctions essentielles de messagerie ne sont pas présentées comme réservées au Premium.</p>
+</section>
+
+<section id="paiement" class="card full">
+  <h2>📱 Paiement Premium</h2>
+  <p class="muted">Pour le moment, le paiement est manuel. L'API de paiement sera intégrée ultérieurement.</p>
+  <div class="number">Numéro Premium : 0170404109</div>
+  <div class="steps">
+    <div class="step"><b>Effectuez le paiement</b><br>Payez exactement <b>5 000 FCFA</b> sur le numéro Premium indiqué ci-dessus, avec le moyen Mobile Money pris en charge.</div>
+    <div class="step"><b>Conservez la référence</b><br>Gardez la preuve et la référence de transaction. Ne communiquez jamais votre code PIN.</div>
+    <div class="step"><b>Vérification</b><br>La transaction doit être vérifiée avant l'activation du Premium.</div>
+    <div class="step"><b>Activation</b><br>Après confirmation, le Premium est activé pour <b>5 mois</b>.</div>
+  </div>
+  <div class="notice">⚠️ Ce site ne demande jamais votre code PIN, votre mot de passe Mobile Money ou vos codes secrets.</div>
+</section>
+
+<section class="grid full">
+  <div class="card">
+    <h2>❤️ Les dons</h2>
+    <p>Les dons sont un système séparé de l'abonnement Premium. Ils peuvent soutenir le développement de TermChat, la création de communautés et, selon les possibilités du projet, de petits projets.</p>
+    <p><b>Important :</b> un don ne donne pas automatiquement le statut Premium.</p>
+    <p class="muted">Le numéro dédié aux dons sera ajouté lorsque le moyen de paiement sera défini.</p>
+  </div>
+  <div class="card">
+    <h2>💰 Utilisation du financement</h2>
+    <ul class="check">
+      <li>Serveurs et infrastructure</li>
+      <li>Stockage</li>
+      <li>Maintenance</li>
+      <li>Sécurité et corrections</li>
+      <li>Développement de nouvelles fonctions</li>
+      <li>Communautés et soutien à des projets</li>
+    </ul>
+  </div>
+</section>
+
+<section id="confidentialite" class="card full">
+  <h2>🔐 Politique de confidentialité</h2>
+  <p><b>Version : 1.0 — 6 octobre 2026</b></p>
+  <p>Cette page est destinée au paiement et à l'information sur TermChat. Les données demandées doivent être limitées à ce qui est nécessaire au traitement d'un abonnement ou d'une transaction.</p>
+  <h3>Données pouvant être traitées</h3>
+  <p>Selon le processus de paiement utilisé : identifiant de compte TermChat, référence de transaction, montant, date, statut du paiement et informations nécessaires à la confirmation.</p>
+  <h3>Utilisation</h3>
+  <p>Ces données peuvent servir à vérifier un paiement, activer un abonnement, gérer son expiration, prévenir la fraude et conserver une trace comptable de la transaction.</p>
+  <h3>Protection</h3>
+  <p>Les informations sensibles doivent être protégées et l'accès doit être limité aux personnes ou systèmes autorisés. Le PIN Mobile Money ne doit jamais être collecté par TermChat.</p>
+  <h3>Partage</h3>
+  <p>Les informations ne doivent pas être vendues. Si un prestataire de paiement est utilisé, seules les informations nécessaires à la transaction doivent lui être transmises, conformément à ses propres règles.</p>
+  <h3>Conservation</h3>
+  <p>Les données de transaction peuvent être conservées pendant la durée nécessaire à la gestion du paiement, à la sécurité et aux obligations applicables. Une durée précise devra être fixée dans la version juridique définitive du service.</p>
+  <p class="small">Cette page constitue une base produit et ne remplace pas une validation juridique adaptée au pays et au prestataire de paiement utilisés.</p>
+</section>
+
+<section class="grid full">
+  <div class="card">
+    <h2>📜 Conditions d'utilisation</h2>
+    <p>L'abonnement Premium coûte 5 000 FCFA et couvre une période de 5 mois après confirmation du paiement.</p>
+    <p>Une transaction en attente ne doit pas être considérée comme un paiement confirmé. Les activations, remboursements et annulations doivent suivre les règles du moyen de paiement et les conditions définitives de TermChat.</p>
+    <p>L'utilisateur est responsable de la conservation de sa preuve de paiement. TermChat ne demande jamais le PIN Mobile Money.</p>
+  </div>
+  <div class="card">
+    <h2>🛡️ Sécurité</h2>
+    <ul class="check">
+      <li>Ne jamais partager son PIN</li>
+      <li>Vérifier le montant avant paiement</li>
+      <li>Conserver la référence de transaction</li>
+      <li>Ne pas envoyer de code secret par message</li>
+      <li>Attendre la confirmation avant de considérer Premium actif</li>
+    </ul>
+  </div>
+</section>
+
+<section id="faq" class="card full">
+  <h2>❓ Questions fréquentes</h2>
+  <details><summary>Combien coûte Premium ?</summary><p>5 000 FCFA pour 5 mois.</p></details>
+  <details><summary>Le don et Premium sont-ils la même chose ?</summary><p>Non. Premium est un abonnement. Le don est une contribution volontaire séparée.</p></details>
+  <details><summary>Le don active-t-il Premium ?</summary><p>Non, pas automatiquement.</p></details>
+  <details><summary>Le paiement est-il automatique ?</summary><p>Non pour cette première version. Le paiement est prévu en mode manuel jusqu'à l'intégration d'une API.</p></details>
+  <details><summary>Dois-je donner mon PIN Mobile Money ?</summary><p>Non. TermChat ne doit jamais demander votre PIN.</p></details>
+  <details><summary>Que se passe-t-il après le paiement ?</summary><p>La transaction doit être vérifiée. Après confirmation, l'abonnement est activé pour 5 mois.</p></details>
+</section>
+
+<section class="card full">
+  <h2>📞 Contact & assistance</h2>
+  <p>Pour une question concernant un paiement, préparez votre référence de transaction et contactez le support officiel de TermChat.</p>
+  <p class="muted">Les coordonnées de support peuvent être ajoutées ici avant la mise en production.</p>
+</section>
+</main>
+
+<footer>
+  <div class="footer-in">
+    <b>💬 TermChat</b>
+    <p>Projet de messagerie — DEV.D.A.J / AbouDev Labs 🇨🇮</p>
+    <div class="footer-links">
+      <a href="#premium">Premium</a>
+      <a href="#paiement">Paiement</a>
+      <a href="#confidentialite">Confidentialité</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <p class="small">© 2026 TermChat. Page de paiement en version manuelle — API à intégrer ultérieurement.</p>
+  </div>
+</footer>
+</body>
+</html>

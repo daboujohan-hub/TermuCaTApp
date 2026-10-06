@@ -1,28 +1,59 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
-
-function Icon({ label }: { label: string }) {
-  return <Text style={{ fontSize: 18 }}>{label}</Text>;
-}
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: '#0B8A6B' }}>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: '#2F80ED',
+        tabBarInactiveTintColor: '#8E8E93',
+        tabBarStyle: { backgroundColor: '#FFFFFF', borderTopColor: '#F0F0F0' },
+      }}
+    >
       <Tabs.Screen
         name="index"
-        options={{ title: 'Discussions', tabBarIcon: () => <Icon label="💬" /> }}
+        options={{
+          title: 'Discussions',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={size} color={color} />
+          ),
+        }}
       />
       <Tabs.Screen
         name="docs"
-        options={{ title: 'Aide', tabBarIcon: () => <Icon label="📘" /> }}
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="ecritures"
+        options={{
+          title: 'Écritures',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'book' : 'book-outline'} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="edumap"
+        options={{
+          title: 'École',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'school' : 'school-outline'} size={size} color={color} />
+          ),
+        }}
       />
       <Tabs.Screen
         name="settings"
-        options={{ title: 'Réglages', tabBarIcon: () => <Icon label="⚙️" /> }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="account"
-        options={{ title: 'Compte', tabBarIcon: () => <Icon label="👤" /> }}
+        options={{
+          title: 'Compte',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={size} color={color} />
+          ),
+        }}
       />
     </Tabs>
   );

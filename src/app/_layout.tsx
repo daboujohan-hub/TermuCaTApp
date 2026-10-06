@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+
+import ConnectionBanner from '@/components/ConnectionBanner';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -9,5 +12,11 @@ export default function RootLayout() {
     SplashScreen.hideAsync();
   }, []);
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <>
+      <StatusBar style="light" />
+      <ConnectionBanner />
+      <Stack screenOptions={{ headerShown: false }} />
+    </>
+  );
 }

@@ -3,61 +3,48 @@ import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+  ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { z } from 'zod';
 
 import { inscrire, estErreur } from '@/api/actions/auth';
+import { DEFAULT_COUNTRY, type Country } from '@/constants/countries';
+import CountryPickerModal from '@/components/CountryPickerModal';
 
-const registerSchema = z.object({
-  nom: z.string().min(2, '2 à 20 caractères').max(20, '2 à 20 caractères'),
-  pseudo: z
-    .string()
-    .min(3, '3 à 20 caractères')
-    .max(20, '3 à 20 caractères')
-    .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, 'Doit commencer par une lettre, puis lettres/chiffres/_'),
-  prefixe: z.string().min(1, 'Requis'),
-  mdp: z.string().min(12, 'Minimum 12 caractères'),
-  email: z.string().email('Email invalide').optional().or(z.literal('')),
-});
+const registerSchema = z
+  .object({
+    prenom: z.string().min(1, 'Requis').max(15, 'Trop long'),
+    nom: z.string().min(1, 'Requis').max(15, 'Trop long'),
+    pseudo: z.string().min(3, '3 à 20 caractères').max(20, '3 à 20 caractères')
+      .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, 'Doit commencer par une lettre, puis lettres/chiffres/_'),
+    mdp: z.string().min(12, 'Minimum 12 caractères'),
+  })
+  .refine((data) => `${data.prenom} ${data.nom}`.trim().length <= 20, {
+    message: 'Prénom + Nom : 20 caractères max au total', path: ['nom'],
+  });
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pays, setPays] = useState<Country>(DEFAULT_COUNTRY);
+  const [pickerOuvert, setPickerOuvert] = useState(false);
+  const [mdpVisible, setMdpVisible] = useState(false);
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterForm>({
+  const { control, handleSubmit, formState: { errors } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { nom: '', pseudo: '', prefixe: '+225', mdp: '', email: '' },
+    defaultValues: { prenom: '', nom: '', pseudo: '', mdp: '' },
   });
 
   const onSubmit = async (data: RegisterForm) => {
     setError(null);
     setLoading(true);
     try {
-      const res = await inscrire({
-        nom: data.nom,
-        pseudo: data.pseudo,
-        prefixe: data.prefixe,
-        mdp: data.mdp,
-        email: data.email || undefined,
-      });
-      if (estErreur(res)) {
-        setError(res.msg);
-      } else {
-        router.replace({ pathname: '/(auth)/login', params: { numeroGenere: res.numero } });
-      }
+      const res = await inscrire({ prenom: data.prenom, nom: `${data.prenom} ${data.nom}`.trim(), pseudo: data.pseudo, prefixe: pays.code, mdp: data.mdp });
+      if (estErreur(res)) setError(res.msg);
+      else router.replace({ pathname: '/(auth)/login', params: { numeroGenere: res.numero } });
     } catch (e: any) {
       setError(e?.message ?? 'Erreur réseau.');
     } finally {
@@ -67,145 +54,102 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Créer un compte</Text>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <Image source={require('@/assets/images/icon.png')} style={styles.logo} />
+          <Text style={styles.title}>Créer ton compte</Text>
+          <Text style={styles.subtitle}>Quelques infos pour démarrer sur TermChat.</Text>
 
-        <Text style={styles.label}>Nom</Text>
-        <Controller
-          control={control}
-          name="nom"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              style={styles.input}
-              placeholder="Ton nom"
-              placeholderTextColor="#666"
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-            />
-          )}
-        />
-        {errors.nom && <Text style={styles.errorText}>{errors.nom.message}</Text>}
+          <View style={styles.nameRow}>
+            <View style={styles.nameField}>
+              <Text style={styles.label}>Prénom</Text>
+              <Controller control={control} name="prenom" render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput style={styles.input} placeholder="Ton prénom" placeholderTextColor="#9CA3AF" onBlur={onBlur} onChangeText={onChange} value={value} />
+              )} />
+              {errors.prenom && <Text style={styles.errorText}>{errors.prenom.message}</Text>}
+            </View>
+            <View style={styles.nameField}>
+              <Text style={styles.label}>Nom</Text>
+              <Controller control={control} name="nom" render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput style={styles.input} placeholder="Ton nom" placeholderTextColor="#9CA3AF" onBlur={onBlur} onChangeText={onChange} value={value} />
+              )} />
+              {errors.nom && <Text style={styles.errorText}>{errors.nom.message}</Text>}
+            </View>
+          </View>
 
-        <Text style={styles.label}>Pseudo</Text>
-        <Controller
-          control={control}
-          name="pseudo"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              style={styles.input}
-              placeholder="tonpseudo"
-              placeholderTextColor="#666"
-              autoCapitalize="none"
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-            />
-          )}
-        />
-        {errors.pseudo && <Text style={styles.errorText}>{errors.pseudo.message}</Text>}
+          <Text style={styles.label}>Pseudo</Text>
+          <Controller control={control} name="pseudo" render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput style={styles.input} placeholder="tonpseudo" placeholderTextColor="#9CA3AF" autoCapitalize="none" onBlur={onBlur} onChangeText={onChange} value={value} />
+          )} />
+          {errors.pseudo && <Text style={styles.errorText}>{errors.pseudo.message}</Text>}
 
-        <Text style={styles.label}>Préfixe pays</Text>
-        <Controller
-          control={control}
-          name="prefixe"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              style={styles.input}
-              placeholder="+225"
-              placeholderTextColor="#666"
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-            />
-          )}
-        />
-        {errors.prefixe && <Text style={styles.errorText}>{errors.prefixe.message}</Text>}
-
-        <Text style={styles.label}>Email (optionnel)</Text>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              style={styles.input}
-              placeholder="toi@exemple.com"
-              placeholderTextColor="#666"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-            />
-          )}
-        />
-        {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
-
-        <Text style={styles.label}>Mot de passe</Text>
-        <Controller
-          control={control}
-          name="mdp"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor="#666"
-              secureTextEntry
-              autoCapitalize="none"
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-            />
-          )}
-        />
-        {errors.mdp && <Text style={styles.errorText}>{errors.mdp.message}</Text>}
-        <Text style={styles.hint}>Min. 12 caractères, 3 classes parmi minuscule/majuscule/chiffre/symbole</Text>
-
-        {error && <Text style={styles.errorText}>{error}</Text>}
-
-        <Pressable
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSubmit(onSubmit)}
-          disabled={loading}
-        >
-          {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.buttonText}>S'inscrire</Text>}
-        </Pressable>
-
-        <Link href="/(auth)/login" asChild>
-          <Pressable style={styles.linkWrap}>
-            <Text style={styles.link}>Déjà un compte ? Se connecter</Text>
+          <Text style={styles.label}>Pays</Text>
+          <Pressable style={styles.countryRow} onPress={() => setPickerOuvert(true)}>
+            <Text style={styles.countryFlag}>{pays.flag}</Text>
+            <Text style={styles.countryName}>{pays.name}</Text>
+            <Text style={styles.countryCode}>{pays.code}</Text>
+            <Ionicons name="chevron-down" size={14} color="#9CA3AF" />
           </Pressable>
-        </Link>
-      </ScrollView>
+
+          <Text style={styles.label}>Mot de passe</Text>
+          <View style={styles.passwordRow}>
+            <Controller control={control} name="mdp" render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput style={styles.passwordInput} placeholder="••••••••" placeholderTextColor="#9CA3AF"
+                secureTextEntry={!mdpVisible} autoCapitalize="none" onBlur={onBlur} onChangeText={onChange} value={value} />
+            )} />
+            <Pressable style={styles.eyeBtn} onPress={() => setMdpVisible((v) => !v)}>
+              <Ionicons name={mdpVisible ? 'eye-off-outline' : 'eye-outline'} size={20} color="#8E8E93" />
+            </Pressable>
+          </View>
+          {errors.mdp && <Text style={styles.errorText}>{errors.mdp.message}</Text>}
+          <Text style={styles.hint}>Min. 12 caractères, 3 classes parmi minuscule/majuscule/chiffre/symbole</Text>
+
+          {error && <Text style={styles.errorText}>{error}</Text>}
+
+          <Pressable style={[styles.button, loading && styles.buttonDisabled]} onPress={handleSubmit(onSubmit)} disabled={loading}>
+            {loading ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <ActivityIndicator color="#fff" />
+                <Text style={styles.buttonText}>Inscription en cours...</Text>
+              </View>
+            ) : <Text style={styles.buttonText}>S'inscrire</Text>}
+          </Pressable>
+
+          <Link href="/(auth)/login" asChild>
+            <Pressable style={styles.linkWrap}>
+              <Text style={styles.link}>Déjà un compte ? Se connecter</Text>
+            </Pressable>
+          </Link>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <CountryPickerModal visible={pickerOuvert} onClose={() => setPickerOuvert(false)} onSelect={setPays} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  content: { padding: 24, paddingBottom: 48 },
-  title: { color: '#fff', fontSize: 28, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' },
-  label: { color: '#aaa', fontSize: 14, marginBottom: 6, marginTop: 12 },
-  input: {
-    backgroundColor: '#111',
-    color: '#fff',
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  hint: { color: '#666', fontSize: 12, marginTop: 4 },
-  errorText: { color: '#ff5555', fontSize: 13, marginTop: 4 },
-  button: {
-    backgroundColor: '#0f0',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 24,
-  },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  content: { flexGrow: 1, padding: 24, paddingTop: 12, paddingBottom: 48 },
+  logo: { width: 52, height: 52, borderRadius: 13, alignSelf: 'center', marginBottom: 14 },
+  title: { color: '#111827', fontSize: 24, fontWeight: '700', textAlign: 'center' },
+  subtitle: { color: '#8E8E93', fontSize: 14, marginBottom: 22, marginTop: 6, textAlign: 'center' },
+  label: { color: '#8E8E93', fontSize: 12, marginBottom: 6, marginTop: 16, fontWeight: '500' },
+  nameRow: { flexDirection: 'row', gap: 12 },
+  nameField: { flex: 1 },
+  input: { backgroundColor: '#F6F6F7', color: '#111827', borderRadius: 16, padding: 14, fontSize: 16 },
+  countryRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F6F6F7', borderRadius: 16, padding: 14 },
+  countryFlag: { fontSize: 19 },
+  countryName: { flex: 1, fontSize: 15, color: '#111827' },
+  countryCode: { fontSize: 14, color: '#8E8E93', fontFamily: 'monospace' },
+  passwordRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  passwordInput: { flex: 1, backgroundColor: '#F6F6F7', color: '#111827', borderRadius: 16, padding: 14, fontSize: 16 },
+  eyeBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F6F6F7', borderRadius: 16 },
+  hint: { color: '#9CA3AF', fontSize: 12, marginTop: 6 },
+  errorText: { color: '#E5484D', fontSize: 13, marginTop: 4 },
+  button: { backgroundColor: '#2F80ED', borderRadius: 16, padding: 16, alignItems: 'center', marginTop: 26 },
   buttonDisabled: { opacity: 0.5 },
-  buttonText: { color: '#000', fontSize: 16, fontWeight: 'bold' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   linkWrap: { marginTop: 20, alignItems: 'center' },
-  link: { color: '#0af', fontSize: 14 },
+  link: { color: '#2F80ED', fontSize: 14, fontWeight: '600' },
 });

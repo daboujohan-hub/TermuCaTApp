@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>EduMap — San Pedro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+:root {
+  --or: #F5A623;
+  --vert: #00E5A0;
+  --rouge: #FF4B6E;
+  --bleu: #1A1F3C;
+  --noir: #0A0C1B;
+  --gris: #1E2340;
+  --gris2: #2A2F52;
+  --texte: #E8EAF6;
+  --texte2: #8B90B8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--noir);
+  color: var(--texte);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(245,166,35,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,229,160,0.05) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.header {
+  position: relative; z-index: 10;
+  padding: 28px 20px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.logo { display: flex; align-items: center; gap: 12px; }
+
+.logo-icon {
+  width: 42px; height: 42px;
+  background: linear-gradient(135deg, var(--or), #FF8C00);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 20px rgba(245,166,35,0.35);
+  animation: pulse-logo 3s ease-in-out infinite;
+}
+
+@keyframes pulse-logo {
+  0%, 100% { box-shadow: 0 4px 20px rgba(245,166,35,0.35); }
+  50% { box-shadow: 0 4px 35px rgba(245,166,35,0.6); }
+}
+
+.logo-text {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.logo-text span {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--texte2);
+  margin-top: 2px;
+}
+
+.btn-loc {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  background: rgba(245,166,35,0.1);
+  border: 1px solid rgba(245,166,35,0.3);
+  border-radius: 50px;
+  color: var(--or);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-loc:hover { background: rgba(245,166,35,0.2); border-color: var(--or); }
+.btn-loc.actif { background: var(--or); color: var(--noir); border-color: var(--or); }
+
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--or);
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+.btn-loc.actif .dot { background: var(--noir); }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.stats {
+  position: relative; z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 16px 16px 0;
+}
+
+.stat {
+  background: var(--gris);
+  border-radius: 14px;
+  padding: 14px 12px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.stat-num {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--or), #FF8C00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--texte2);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.search-wrap {
+  position: relative; z-index: 10;
+  padding: 16px;
+}
+
+.search-inner { position: relative; }
+
+.search-icon {
+  position: absolute;
+  left: 16px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 16px 14px 44px;
+  background: var(--gris);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  color: var(--texte);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.search-input::placeholder { color: var(--texte2); }
+.search-input:focus {
+  border-color: rgba(245,166,35,0.5);
+  background: var(--gris2);
+  box-shadow: 0 0 0 3px rgba(245,166,35,0.08);
+}
+
+.map-wrap {
+  position: relative; z-index: 10;
+  padding: 0 16px 16px;
+}
+
+.map-container {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+#map { height: 280px; width: 100%; }
+#map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.7);
+}
+
+.map-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 60px;
+  background: linear-gradient(to top, var(--noir), transparent);
+  pointer-events: none;
+  z-index: 400;
+}
+
+.filtres-wrap {
+  position: relative; z-index: 10;
+  padding: 0 16px 12px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filtres-wrap::-webkit-scrollbar { display: none; }
+
+.filtre-pill {
+  padding: 7px 16px;
+  border-radius: 50px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: var(--texte2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s;
+}
+
+.filtre-pill:hover { border-color: var(--or); color: var(--or); }
+.filtre-pill.active {
+  background: linear-gradient(135deg, var(--or), #FF8C00);
+  border-color: transparent;
+  color: var(--noir);
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(245,166,35,0.3);
+}
+
+.section-titre {
+  position: relative; z-index: 10;
+  padding: 0 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-titre h2 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.section-titre span { font-size: 13px; color: var(--texte2); }
+
+.ecoles-liste {
+  position: relative; z-index: 10;
+  padding: 0 16px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ecole-card {
+  background: var(--gris);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.25s;
+  animation: fadeUp 0.4s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ecole-card:hover {
+  background: var(--gris2);
+  border-color: rgba(245,166,35,0.2);
+  transform: translateX(4px);
+}
+
+.ecole-avatar {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.avatar-lycee   { background: rgba(106,180,255,0.15); }
+.avatar-college { background: rgba(106,255,106,0.12); }
+.avatar-epp     { background: rgba(255,106,106,0.12); }
+.avatar-epc     { background: rgba(255,180,106,0.12); }
+.avatar-autre   { background: rgba(192,106,255,0.12); }
+
+.ecole-body { flex: 1; min-width: 0; }
+
+.ecole-nom {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ecole-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+.ecole-quartier { font-size: 12px; color: var(--texte2); }
+
+.ecole-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.badge-lycee   { background: rgba(106,180,255,0.15); color: #6ab4ff; }
+.badge-college { background: rgba(106,255,106,0.12); color: #6aff6a; }
+.badge-epp     { background: rgba(255,106,106,0.12); color: #ff6a6a; }
+.badge-epc     { background: rgba(255,180,106,0.12); color: #ffb46a; }
+.badge-autre   { background: rgba(192,106,255,0.12); color: #c06aff; }
+
+.ecole-dist { font-size: 11px; color: var(--vert); font-weight: 600; }
+
+.ecole-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-nav {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  transition: all 0.2s;
+}
+
+.btn-nav-go {
+  background: linear-gradient(135deg, var(--or), #FF8C00);
+  box-shadow: 0 4px 12px rgba(245,166,35,0.3);
+}
+
+.btn-nav-go:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(245,166,35,0.5); }
+
+.btn-nav-map {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--texte2);
+}
+
+.btn-nav-map:hover { background: rgba(255,255,255,0.12); color: var(--texte); }
+
+.vide { text-align: center; padding: 50px 20px; color: var(--texte2); }
+.vide-icon { font-size: 48px; margin-bottom: 12px; }
+.vide p { font-size: 15px; }
+
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--gris2);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--texte);
+  padding: 12px 22px;
+  border-radius: 50px;
+  font-size: 14px;
+  z-index: 9999;
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  white-space: nowrap;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.leaflet-container { background: #111520; }
+.leaflet-popup-content-wrapper {
+  background: var(--gris2) !important;
+  color: var(--texte) !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+}
+.leaflet-popup-tip { background: var(--gris2) !important; }
+.leaflet-popup-content { margin: 14px 16px !important; }
+.admin-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 5000;
+  align-items: flex-end;
+  justify-content: center;
+}
+.admin-backdrop.show { display: flex; }
+.admin-sheet {
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--gris);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 24px 20px 32px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.admin-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+.admin-input {
+  width: 100%;
+  padding: 13px 14px;
+  background: var(--gris2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  color: var(--texte);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  margin-bottom: 10px;
+  outline: none;
+}
+.admin-input::placeholder { color: var(--texte2); }
+.admin-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--or), #FF8C00);
+  border: none;
+  border-radius: 12px;
+  color: var(--noir);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+.admin-erreur { color: #ff6a6a; font-size: 13px; margin: -4px 0 10px; }
+.admin-photo-preview {
+  width: 100%; height: 140px;
+  border-radius: 12px;
+  background: var(--gris2);
+  margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  color: var(--texte2);
+  font-size: 13px;
+  cursor: pointer;
+}
+.admin-photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.admin-close { text-align: center; color: var(--texte2); font-size: 13px; margin-top: 14px; cursor: pointer; }
+.ecole-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon" onclick="tapLogo()">🏫</div>
+    <div class="logo-text">
+      EduMap
+      <span>San Pedro · Côte d'Ivoire</span>
+    </div>
+  </div>
+  <button class="btn-loc" id="btn-loc" onclick="maPosition()">
+    <div class="dot"></div>
+    Me localiser
+  </button>
+</header>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num" id="stat-total">0</div>
+    <div class="stat-label">Écoles</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="stat-quartiers">0</div>
+    <div class="stat-label">Quartiers</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="stat-affichees">0</div>
+    <div class="stat-label">Résultats</div>
+  </div>
+</div>
+
+<div class="search-wrap">
+  <div class="search-inner">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="search" type="text"
+      placeholder="Rechercher une école, un quartier..."
+      oninput="filtrer()">
+  </div>
+</div>
+
+<div class="map-wrap">
+  <div class="map-container">
+    <div id="map"></div>
+    <div class="map-overlay"></div>
+  </div>
+</div>
+
+<div class="filtres-wrap" id="filtres"></div>
+
+<div class="section-titre">
+  <h2>Toutes les écoles</h2>
+  <span id="compteur">0 résultats</span>
+</div>
+
+<div class="ecoles-liste" id="liste"></div>
+
+<div class="toast" id="toast">
+  <span id="toast-icon">✅</span>
+  <span id="toast-msg"></span>
+</div>
+
+<div class="admin-backdrop" id="admin-backdrop">
+  <div class="admin-sheet">
+    <div id="admin-step-password">
+      <div class="admin-title">🔒 Accès administrateur</div>
+      <input class="admin-input" id="admin-mdp1" type="password" placeholder="Mot de passe">
+      <input class="admin-input" id="admin-mdp2" type="password" placeholder="Confirmer le mot de passe">
+      <div class="admin-erreur" id="admin-mdp-erreur" style="display:none"></div>
+      <button class="admin-btn" onclick="validerMdpAdmin()">Continuer</button>
+      <div class="admin-close" onclick="fermerAdmin()">Annuler</div>
+    </div>
+    <div id="admin-step-form" style="display:none">
+      <div class="admin-title">🏫 Ajouter une école</div>
+      <input class="admin-input" id="admin-nom" type="text" placeholder="Nom de l'école">
+      <input class="admin-input" id="admin-quartier" type="text" placeholder="Quartier / adresse">
+      <div id="admin-gps-statut" style="color:var(--texte2);font-size:12px;margin-bottom:10px">📡 Position GPS: en attente…</div>
+      <div id="admin-photos-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <div class="admin-erreur" id="admin-form-erreur" style="display:none"></div>
+      <button class="admin-btn" id="admin-submit-btn" onclick="soumettreEcole()">Enregistrer l'école</button>
+      <div class="admin-close" onclick="fermerAdmin()">Annuler</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const ecoles = [
+  { nom: "Collège Moderne Digboué",      quartier: "Djiby",   lat: 4.755587, lng: -6.693444 },
+  { nom: "EPP Enfant José",               quartier: "Rouge",   lat: 4.766807, lng: -6.660527 },
+  { nom: "École Grand Badoo",             quartier: "Badoo",   lat: 4.771501, lng: -6.655521 },
+  { nom: "EPC Assemblée de Dieu 2",       quartier: "Colas",   lat: 4.777972, lng: -6.664504 },
+  { nom: "Lycée Moderne Lucien Yebarth",  quartier: "Centre",  lat: 4.761371, lng: -6.680899 },
+  { nom: "EPP San Pedro Centre",          quartier: "Centre",  lat: 4.748500, lng: -6.636700 },
+  { nom: "EPP Bardot",                    quartier: "Bardot",  lat: 4.758900, lng: -6.671300 },
+  { nom: "Lycée Municipal de San Pedro",  quartier: "Séwéké",  lat: 4.744600, lng: -6.628900 },
+  { nom: "EPC Emmanuel",                  quartier: "Séwéké",  lat: 4.746100, lng: -6.631400 },
+];
+
+let maPos = null, maPosMarker = null, filtreActif = "Tous", markers = [], resultats = [...ecoles];
+
+const map = L.map('map', { zoomControl: false }).setView([4.758, -6.665], 13);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+
+const TYPE_EMOJI  = { lycee:'🎓', college:'📚', epp:'✏️', epc:'⛪', autre:'🏫' };
+const TYPE_LABEL  = { lycee:'Lycée', college:'Collège', epp:'EPP', epc:'EPC', autre:'École' };
+const TYPE_COLOR  = { lycee:'#6ab4ff', college:'#6aff6a', epp:'#ff6a6a', epc:'#ffb46a', autre:'#c06aff' };
+
+function getType(nom) {
+  const n = nom.toLowerCase();
+  if (n.includes('lycée') || n.includes('lycee')) return 'lycee';
+  if (n.includes('collège') || n.includes('college')) return 'college';
+  if (n.includes('epp')) return 'epp';
+  if (n.includes('epc')) return 'epc';
+  return 'autre';
+}
+
+function dist(lat1,lon1,lat2,lon2) {
+  const R=6371000, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
+}
+
+function fmtDist(m) { return m<1000 ? `${m} m` : `${(m/1000).toFixed(1)} km`; }
+
+function markerIcon(type) {
+  const c = TYPE_COLOR[type];
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:${c};border:3px solid rgba(255,255,255,0.8);box-shadow:0 0 0 4px ${c}44,0 2px 10px rgba(0,0,0,0.5)"></div>`,
+    iconSize:[14,14], iconAnchor:[7,7], popupAnchor:[0,-12]
+  });
+}
+
+function afficher(data) {
+  const liste = document.getElementById('liste');
+  liste.innerHTML = '';
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  document.getElementById('stat-affichees').textContent = data.length;
+  document.getElementById('compteur').textContent = `${data.length} résultat${data.length > 1 ? 's' : ''}`;
+
+  if (!data.length) {
+    liste.innerHTML = `<div class="vide"><div class="vide-icon">🔍</div><p>Aucune école trouvée</p></div>`;
+    return;
+  }
+
+  data.forEach((e, i) => {
+    const type = getType(e.nom);
+    const d = maPos ? dist(maPos.lat, maPos.lng, e.lat, e.lng) : null;
+    const card = document.createElement('div');
+    card.className = 'ecole-card';
+    card.style.animationDelay = `${i * 0.05}s`;
+    card.innerHTML = `
+      <div class="ecole-avatar avatar-${type}">${(e.photos && e.photos[0]) ? `<img src="data:image/jpeg;base64,${e.photos[0]}">` : TYPE_EMOJI[type]}</div>
+      <div class="ecole-body">
+        <div class="ecole-nom">${e.nom}</div>
+        <div class="ecole-meta">
+          <span class="ecole-quartier">📍 ${e.quartier}</span>
+          <span class="ecole-badge badge-${type}">${TYPE_LABEL[type]}</span>
+          ${d !== null ? `<span class="ecole-dist">📏 ${fmtDist(d)}</span>` : ''}
+        </div>
+      </div>
+      <div class="ecole-actions">
+        <button class="btn-nav btn-nav-go" onclick="naviguer(${e.lat},${e.lng},'${e.nom.replace(/'/g,"\\'")}')">🧭</button>
+        <button class="btn-nav btn-nav-map" onclick="centrer(${i})">🗺</button>
+      </div>`;
+    liste.appendChild(card);
+
+    const mk = L.marker([e.lat, e.lng], { icon: markerIcon(type) }).addTo(map);
+    const galeriePopup = (e.photos && e.photos.length > 1)
+      ? `<div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:10px">${e.photos.map(ph => `<img src="data:image/jpeg;base64,${ph}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0">`).join('')}</div>`
+      : '';
+    mk.bindPopup(`<div style="font-family:'DM Sans',sans-serif">
+      <div style="font-weight:700;font-size:14px;margin-bottom:6px">${TYPE_EMOJI[type]} ${e.nom}</div>
+      <div style="font-size:12px;color:#8B90B8;margin-bottom:10px">📍 ${e.quartier}</div>
+      ${galeriePopup}
+      <button onclick="naviguer(${e.lat},${e.lng},'${e.nom.replace(/'/g,"\\'")}' )"
+        style="width:100%;padding:8px;background:linear-gradient(135deg,#F5A623,#FF8C00);color:#0A0C1B;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">
+        🧭 Y aller
+      </button></div>`);
+    markers.push(mk);
+  });
+}
+
+function genFiltres() {
+  const quartiers = ['Tous', ...new Set(ecoles.map(e => e.quartier))];
+  const wrap = document.getElementById('filtres');
+  wrap.innerHTML = '';
+  quartiers.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'filtre-pill' + (q === 'Tous' ? ' active' : '');
+    btn.textContent = q === 'Tous' ? '🏙 Tous' : q;
+    btn.onclick = () => {
+      filtreActif = q;
+      document.querySelectorAll('.filtre-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filtrer();
+    };
+    wrap.appendChild(btn);
+  });
+  document.getElementById('stat-quartiers').textContent = quartiers.length - 1;
+}
+
+function filtrer() {
+  const val = document.getElementById('search').value.toLowerCase();
+  resultats = ecoles.filter(e => {
+    const ok1 = e.nom.toLowerCase().includes(val) || e.quartier.toLowerCase().includes(val);
+    const ok2 = filtreActif === 'Tous' || e.quartier === filtreActif;
+    return ok1 && ok2;
+  });
+  if (maPos) resultats.sort((a,b) => dist(maPos.lat,maPos.lng,a.lat,a.lng) - dist(maPos.lat,maPos.lng,b.lat,b.lng));
+  afficher(resultats);
+}
+
+function maPosition() {
+  toast('📡','Localisation en cours…');
+  envoyerAuNatif({ type: 'geoloc_request', contexte: 'utilisateur' });
+}
+
+window.edumapPositionResultat = function(contexte, lat, lng) {
+  if (contexte === 'utilisateur') {
+    maPos = { lat, lng };
+    if (maPosMarker) map.removeLayer(maPosMarker);
+    maPosMarker = L.circleMarker([lat,lng],{
+      radius:8, color:'#F5A623', fillColor:'#F5A623', fillOpacity:1, weight:3
+    }).addTo(map).bindPopup('<b style="color:#F5A623">📡 Vous êtes ici</b>').openPopup();
+    map.setView([lat,lng],14);
+    document.getElementById('btn-loc').classList.add('actif');
+    toast('✅','Position trouvée !');
+    filtrer();
+  } else if (contexte === 'admin') {
+    adminPositionGPS = { lat, lng };
+    const el = document.getElementById('admin-gps-statut');
+    if (el) el.textContent = '✅ Position GPS trouvée';
+  }
+};
+
+window.edumapPositionErreur = function(contexte) {
+  if (contexte === 'utilisateur') {
+    toast('❌','Impossible de vous localiser');
+  } else if (contexte === 'admin') {
+    const el = document.getElementById('admin-gps-statut');
+    if (el) el.textContent = '❌ Position GPS indisponible';
+  }
+};
+
+function centrer(i) {
+  const e = resultats[i];
+  map.setView([e.lat,e.lng],16);
+  markers[i].openPopup();
+  window.scrollTo({ top: document.querySelector('.map-wrap').offsetTop - 10, behavior: 'smooth' });
+}
+
+function naviguer(lat,lng,nom) {
+  toast('🧭',`Navigation vers ${nom}`);
+  setTimeout(() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank'), 900);
+}
+
+let toastTimer;
+function toast(icon,msg) {
+  const el = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ─── Pont natif (React Native WebView) ─────────────
+function envoyerAuNatif(msg) {
+  if (window.ReactNativeWebView) {
+    window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+  }
+}
+
+window.edumapListeResultat = function(jsonStr) {
+  try {
+    const res = JSON.parse(jsonStr);
+    if (res.ok && Array.isArray(res.ecoles)) {
+      res.ecoles.forEach(e => {
+        if (!ecoles.some(x => x.nom === e.nom && x.quartier === e.quartier)) {
+          ecoles.push({ nom: e.nom, quartier: e.quartier, lat: e.lat, lng: e.lng, photos: e.photos_base64 || [] });
+        }
+      });
+      document.getElementById('stat-total').textContent = ecoles.length;
+      genFiltres();
+      filtrer();
+    }
+  } catch (err) {}
+};
+
+window.edumapAjoutResultat = function(jsonStr) {
+  try {
+    const res = JSON.parse(jsonStr);
+    const btn = document.getElementById('admin-submit-btn');
+    if (btn) { btn.disabled = false; btn.textContent = "Enregistrer l'école"; }
+    if (res.ok) {
+      toast('✅', res.msg || 'École ajoutée !');
+      fermerAdmin();
+      envoyerAuNatif({ type: 'edumap_list_request' });
+    } else {
+      const err = document.getElementById('admin-form-erreur');
+      err.textContent = res.msg || 'Erreur inconnue.';
+      err.style.display = 'block';
+    }
+  } catch (err) {}
+};
+
+// ─── Mode admin (tap 5x sur le logo) ───────────────
+let tapCount = 0, tapTimer = null;
+function tapLogo() {
+  tapCount++;
+  clearTimeout(tapTimer);
+  tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
+  if (tapCount >= 5) {
+    tapCount = 0;
+    ouvrirAdmin();
+  }
+}
+
+let adminPositionGPS = null, adminPhotos = [], adminMdpConfirme = null;
+const ADMIN_MAX_PHOTOS = 5;
+
+function rendreAdminPhotos() {
+  const row = document.getElementById('admin-photos-row');
+  if (!row) return;
+  row.innerHTML = '';
+  adminPhotos.forEach((ph, i) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;width:64px;height:64px';
+    wrap.innerHTML = `
+      <img src="data:image/jpeg;base64,${ph.base64}" style="width:64px;height:64px;object-fit:cover;border-radius:10px">
+      <div onclick="retirerPhotoAdmin(${i})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:10px;background:#FF4B6E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer">✕</div>`;
+    row.appendChild(wrap);
+  });
+  if (adminPhotos.length < ADMIN_MAX_PHOTOS) {
+    const ajout = document.createElement('div');
+    ajout.className = 'admin-photo-preview';
+    ajout.style.cssText = 'width:64px;height:64px;margin-bottom:0';
+    ajout.textContent = '📷';
+    ajout.onclick = () => envoyerAuNatif({ type: 'edumap_pick_photos', restant: ADMIN_MAX_PHOTOS - adminPhotos.length });
+    row.appendChild(ajout);
+  }
+}
+
+function retirerPhotoAdmin(i) {
+  adminPhotos.splice(i, 1);
+  rendreAdminPhotos();
+}
+
+function tailleBase64(b64) {
+  // Le calcul standard (longueur * 3/4) surestime de 1 ou 2 octets si la
+  // chaine se termine par du padding ('=' ou '=='), ce qui faisait echouer
+  // la verification stricte cote serveur (taille annoncee != taille reelle).
+  let padding = 0;
+  if (b64.endsWith('==')) padding = 2;
+  else if (b64.endsWith('=')) padding = 1;
+  return Math.floor((b64.length * 3) / 4) - padding;
+}
+
+window.edumapPhotosResultat = function(jsonStr) {
+  try {
+    const photos = JSON.parse(jsonStr);
+    const place = ADMIN_MAX_PHOTOS - adminPhotos.length;
+    photos.slice(0, place).forEach(base64 => {
+      adminPhotos.push({ base64, taille: tailleBase64(base64) });
+    });
+    rendreAdminPhotos();
+  } catch (err) {}
+};
+
+function ouvrirAdmin() {
+  document.getElementById('admin-backdrop').classList.add('show');
+  document.getElementById('admin-step-password').style.display = 'block';
+  document.getElementById('admin-step-form').style.display = 'none';
+  document.getElementById('admin-mdp1').value = '';
+  document.getElementById('admin-mdp2').value = '';
+  document.getElementById('admin-mdp-erreur').style.display = 'none';
+}
+
+function fermerAdmin() {
+  document.getElementById('admin-backdrop').classList.remove('show');
+  adminPhotos = [];
+  rendreAdminPhotos();
+  document.getElementById('admin-nom').value = '';
+  document.getElementById('admin-quartier').value = '';
+}
+
+function validerMdpAdmin() {
+  const m1 = document.getElementById('admin-mdp1').value;
+  const m2 = document.getElementById('admin-mdp2').value;
+  const err = document.getElementById('admin-mdp-erreur');
+  if (!m1 || m1 !== m2) {
+    err.textContent = 'Les deux mots de passe ne correspondent pas.';
+    err.style.display = 'block';
+    return;
+  }
+  adminMdpConfirme = m1;
+  document.getElementById('admin-step-password').style.display = 'none';
+  document.getElementById('admin-step-form').style.display = 'block';
+  document.getElementById('admin-gps-statut').textContent = '📡 Position GPS: recherche…';
+  envoyerAuNatif({ type: 'geoloc_request', contexte: 'admin' });
+  rendreAdminPhotos();
+}
+
+function soumettreEcole() {
+  const nom = document.getElementById('admin-nom').value.trim();
+  const quartier = document.getElementById('admin-quartier').value.trim();
+  const err = document.getElementById('admin-form-erreur');
+  err.style.display = 'none';
+  if (!nom || !quartier) {
+    err.textContent = 'Nom et quartier requis.';
+    err.style.display = 'block';
+    return;
+  }
+  if (!adminPositionGPS) {
+    err.textContent = 'Position GPS non disponible, réessaie.';
+    err.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('admin-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Enregistrement…';
+  envoyerAuNatif({
+    type: 'edumap_add',
+    payload: {
+      mot_de_passe: adminMdpConfirme,
+      nom, quartier,
+      lat: adminPositionGPS.lat, lng: adminPositionGPS.lng,
+      photos: adminPhotos.map(p => p.base64),
+      photos_tailles: adminPhotos.map(p => p.taille),
+    }
+  });
+}
+
+document.getElementById('stat-total').textContent = ecoles.length;
+genFiltres();
+filtrer();
+envoyerAuNatif({ type: 'edumap_list_request' });
+</script>
+</body>
+</html>
