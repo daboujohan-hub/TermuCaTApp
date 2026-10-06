@@ -25,15 +25,6 @@ export default function TabsLayout() {
         options={{ href: null }}
       />
       <Tabs.Screen
-        name="ecritures"
-        options={{
-          title: 'Écritures',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'book' : 'book-outline'} size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="edumap"
         options={{
           title: 'École',

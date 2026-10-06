@@ -60,3 +60,6 @@ corriger_*.py
 desactiver_*.py
 vocal_expire_app.py
 entete_chat_nom.py
+retirer_*.py
+ajouter_*.py
+maj_*.py
