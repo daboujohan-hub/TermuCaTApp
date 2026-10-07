@@ -1,7 +1,23 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect } from 'react';
+import { Alert } from 'react-native';
+import termchatSocket from '@/api/socket';
 
 export default function TabsLayout() {
+  useEffect(() => {
+    const unsub = termchatSocket.onMessage((data: any) => {
+      if (!data || 'ok' in data) return;
+      const nom = data.nom ? `« ${data.nom} »` : "de l'école";
+      if (data.type === 'edumap_approuvee') {
+        Alert.alert('École publiée', `Ta proposition ${nom} a été validée et publiée sur la carte.`);
+      } else if (data.type === 'edumap_rejetee') {
+        Alert.alert('Proposition non retenue', `Ta proposition ${nom} n'a pas été retenue.${data.raison ? '\n\nMotif : ' + data.raison : ''}`);
+      }
+    });
+    return unsub;
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
