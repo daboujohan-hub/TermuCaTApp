@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { WebView } from 'react-native-webview';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -96,20 +96,44 @@ export default function EduMapScreen() {
     }
     if (msg.type === 'edumap_list_request') {
       try {
-        const res = await sendRequest({ action: 'edumap_lister_ecoles' } as any);
+        const res = await sendRequest({ action: 'edumap_lister_ecoles', sans_photos: true } as any);
         envoyerAuWebView('edumapListeResultat', res);
       } catch (e: any) {
         envoyerAuWebView('edumapListeResultat', { ok: false, msg: e?.message ?? 'Erreur reseau.' });
       }
     } else if (msg.type === 'edumap_add') {
       try {
-        const res = await sendRequest({ action: 'edumap_ajouter_ecole', ...msg.payload } as any);
+        const res = await sendRequest({ ...msg.payload, action: 'edumap_ajouter_ecole' } as any);
         envoyerAuWebView('edumapAjoutResultat', res);
       } catch (e: any) {
         envoyerAuWebView('edumapAjoutResultat', { ok: false, msg: e?.message ?? 'Erreur reseau.' });
       }
     } else if (msg.type === 'geoloc_request') {
       demanderPosition(msg.contexte ?? 'utilisateur');
+    } else if (msg.type === 'edumap_photo_request') {
+      const id = String(msg.id ?? '');
+      const index = Number(msg.index);
+      if (/^[A-Za-z0-9_-]{1,64}$/.test(id) && Number.isInteger(index) && index >= 0 && index <= 9) {
+        try {
+          const res: any = await sendRequest({ action: 'edumap_photo', id, index } as any);
+          envoyerAuWebView('edumapPhotoResultat', { ...res, id, index });
+        } catch (e: any) {
+          envoyerAuWebView('edumapPhotoResultat', { ok: false, msg: e?.message ?? 'Erreur reseau.', id, index });
+        }
+      }
+    } else if (msg.type === 'edumap_propose') {
+      try {
+        const res = await sendRequest({ ...msg.payload, action: 'edumap_proposer_ecole' } as any);
+        envoyerAuWebView('edumapPropositionResultat', res);
+      } catch (e: any) {
+        envoyerAuWebView('edumapPropositionResultat', { ok: false, msg: e?.message ?? 'Erreur reseau.' });
+      }
+    } else if (msg.type === 'open_maps') {
+      const lat = Number(msg.lat);
+      const lng = Number(msg.lng);
+      if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+        Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+      }
     } else if (msg.type === 'edumap_pick_photos') {
       choisirPhotosEcole(msg.restant ?? 5);
     }
@@ -135,7 +159,7 @@ export default function EduMapScreen() {
         javaScriptEnabled
         domStorageEnabled
         geolocationEnabled
-        allowFileAccess
+        
         onMessage={onMessage}
       />
     </SafeAreaView>

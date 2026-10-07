@@ -616,11 +616,138 @@ function markerIcon(type) {
   });
 }
 
+// ===== Photos à la demande, galerie, plein écran (afficher_photos_ecoles.py) =====
+let courant = [];
+let ioPhotos = null;
+let lbEtat = null;
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+// <<LOGIQUE_PHOTOS
+const photoCache = {};
+const filePhotos = [];
+let photoEnCours = null, photoTimer = null;
+
+function b64ok(s) { return typeof s === 'string' && s.length > 0 && /^[A-Za-z0-9+\/=]+$/.test(s); }
+function cacheDe(id) { return photoCache[id] || (photoCache[id] = { imgs: [], pend: {}, echec: {} }); }
+
+function demanderPhoto(id, index, prio) {
+  if (!id) return;
+  const c = cacheDe(id);
+  if (c.imgs[index] || c.pend[index] || c.echec[index]) return;
+  c.pend[index] = true;
+  if (prio) filePhotos.unshift({ id: id, index: index }); else filePhotos.push({ id: id, index: index });
+  suivantePhoto();
+}
+
+function suivantePhoto() {
+  if (photoEnCours || !filePhotos.length) return;
+  photoEnCours = filePhotos.shift();
+  const t = photoEnCours;
+  envoyerAuNatif({ type: 'edumap_photo_request', id: t.id, index: t.index });
+  clearTimeout(photoTimer);
+  photoTimer = setTimeout(function () {
+    if (photoEnCours !== t) return;
+    photoEnCours = null;
+    const c = cacheDe(t.id);
+    delete c.pend[t.index];
+    c.echec[t.index] = true;
+    majPhotosUI(t.id);
+    suivantePhoto();
+  }, 15000);
+}
+
+window.edumapPhotoResultat = function (jsonStr) {
+  let r = null;
+  try { r = JSON.parse(jsonStr); } catch (e) {}
+  if (r && r.id !== undefined) {
+    const c = cacheDe(r.id);
+    delete c.pend[r.index];
+    if (r.ok && b64ok(r.photo_base64)) { c.imgs[r.index] = r.photo_base64; delete c.echec[r.index]; }
+    else c.echec[r.index] = true;
+    if (photoEnCours && photoEnCours.id === r.id && photoEnCours.index === r.index) {
+      photoEnCours = null;
+      clearTimeout(photoTimer);
+    }
+    majPhotosUI(r.id);
+  }
+  suivantePhoto();
+};
+// LOGIQUE_PHOTOS>>
+
+function nbPhotos(id) {
+  const e = ecoles.find(function (x) { return x.id === id; });
+  return e ? (e.nb || 0) : 0;
+}
+
+function rendreGalerie(el, id) {
+  const n = nbPhotos(id);
+  const c = photoCache[id] || { imgs: [], pend: {}, echec: {} };
+  if (!n) { el.innerHTML = ''; return; }
+  let h = '';
+  for (let i = 0; i < n; i++) {
+    if (b64ok(c.imgs[i])) h += '<img class="gal-img" onclick="lbOuvrir(\'' + id + '\',' + i + ')" src="data:image/jpeg;base64,' + c.imgs[i] + '">';
+    else if (c.echec[i]) h += '<div class="gal-ph">⚠️<span>Photo indisponible</span></div>';
+    else h += '<div class="gal-ph"><div class="gal-spin"></div></div>';
+  }
+  el.innerHTML = h;
+}
+
+function majPhotosUI(id) {
+  const sel = String(id).replace(/"/g, '');
+  document.querySelectorAll('[data-gal="' + sel + '"]').forEach(function (el) { rendreGalerie(el, id); });
+  const c = photoCache[id];
+  document.querySelectorAll('[data-av="' + sel + '"]').forEach(function (el) {
+    if (c && b64ok(c.imgs[0])) el.innerHTML = '<img src="data:image/jpeg;base64,' + c.imgs[0] + '">';
+  });
+  if (lbEtat && lbEtat.id === id) lbAfficher();
+}
+
+function lbOuvrir(id, i) {
+  lbEtat = { id: id, i: i };
+  document.getElementById('lb').classList.add('show');
+  lbAfficher();
+}
+function lbFermer() {
+  lbEtat = null;
+  document.getElementById('lb').classList.remove('show');
+}
+function lbAller(d) {
+  if (!lbEtat) return;
+  const n = nbPhotos(lbEtat.id);
+  if (!n) return;
+  lbEtat.i = (lbEtat.i + d + n) % n;
+  lbAfficher();
+}
+function lbAfficher() {
+  if (!lbEtat) return;
+  const n = nbPhotos(lbEtat.id);
+  const c = photoCache[lbEtat.id];
+  const b = c && c.imgs[lbEtat.i];
+  const img = document.getElementById('lb-img');
+  if (b64ok(b)) { img.src = 'data:image/jpeg;base64,' + b; img.style.display = 'block'; }
+  else { img.removeAttribute('src'); img.style.display = 'none'; demanderPhoto(lbEtat.id, lbEtat.i, true); }
+  document.getElementById('lb-count').textContent = (lbEtat.i + 1) + ' / ' + n;
+  document.getElementById('lb-prev').style.visibility = n > 1 ? 'visible' : 'hidden';
+  document.getElementById('lb-next').style.visibility = n > 1 ? 'visible' : 'hidden';
+}
+
+function naviguerIdx(i) {
+  const e = courant[i];
+  if (e) naviguer(e.lat, e.lng, e.nom);
+}
+
 function afficher(data) {
+  courant = data;
   const liste = document.getElementById('liste');
   liste.innerHTML = '';
   markers.forEach(m => map.removeLayer(m));
   markers = [];
+  if (ioPhotos) { ioPhotos.disconnect(); ioPhotos = null; }
   document.getElementById('stat-affichees').textContent = data.length;
   document.getElementById('compteur').textContent = `${data.length} résultat${data.length > 1 ? 's' : ''}`;
 
@@ -629,44 +756,69 @@ function afficher(data) {
     return;
   }
 
+  if ('IntersectionObserver' in window) {
+    ioPhotos = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (en) {
+        if (en.isIntersecting) {
+          ioPhotos.unobserve(en.target);
+          demanderPhoto(en.target.getAttribute('data-av'), 0, false);
+        }
+      });
+    }, { rootMargin: '150px' });
+  }
+
   data.forEach((e, i) => {
+    if (!e.id) e.id = 'seed_' + ecoles.indexOf(e);
+    if (e.nb === undefined) {
+      const inline = Array.isArray(e.photos) ? e.photos.filter(b64ok) : [];
+      if (inline.length) { const c0 = cacheDe(e.id); inline.forEach(function (b, j) { c0.imgs[j] = b; }); }
+      e.nb = inline.length;
+    }
     const type = getType(e.nom);
     const d = maPos ? dist(maPos.lat, maPos.lng, e.lat, e.lng) : null;
+    const c = photoCache[e.id];
+    const miniature = (c && b64ok(c.imgs[0])) ? `<img src="data:image/jpeg;base64,${c.imgs[0]}">` : TYPE_EMOJI[type];
     const card = document.createElement('div');
     card.className = 'ecole-card';
     card.style.animationDelay = `${i * 0.05}s`;
     card.innerHTML = `
-      <div class="ecole-avatar avatar-${type}">${(e.photos && e.photos[0]) ? `<img src="data:image/jpeg;base64,${e.photos[0]}">` : TYPE_EMOJI[type]}</div>
+      <div class="ecole-avatar avatar-${type}" data-av="${esc(e.id)}"${e.nb ? ` onclick="lbOuvrir('${esc(e.id)}',0)"` : ''}>${miniature}</div>
       <div class="ecole-body">
-        <div class="ecole-nom">${e.nom}</div>
+        <div class="ecole-nom">${esc(e.nom)}</div>
         <div class="ecole-meta">
-          <span class="ecole-quartier">📍 ${e.quartier}</span>
+          <span class="ecole-quartier">📍 ${esc(e.quartier)}</span>
           <span class="ecole-badge badge-${type}">${TYPE_LABEL[type]}</span>
           ${d !== null ? `<span class="ecole-dist">📏 ${fmtDist(d)}</span>` : ''}
+          ${e.nb ? `<span class="ecole-dist">📷 ${e.nb}</span>` : ''}
         </div>
       </div>
       <div class="ecole-actions">
-        <button class="btn-nav btn-nav-go" onclick="naviguer(${e.lat},${e.lng},'${e.nom.replace(/'/g,"\\'")}')">🧭</button>
+        <button class="btn-nav btn-nav-go" onclick="naviguerIdx(${i})">🧭</button>
         <button class="btn-nav btn-nav-map" onclick="centrer(${i})">🗺</button>
       </div>`;
     liste.appendChild(card);
+    const av = card.querySelector('[data-av]');
+    if (e.nb && ioPhotos) ioPhotos.observe(av);
+    else if (e.nb && i < 8) demanderPhoto(e.id, 0, false);
 
     const mk = L.marker([e.lat, e.lng], { icon: markerIcon(type) }).addTo(map);
-    const galeriePopup = (e.photos && e.photos.length > 1)
-      ? `<div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:10px">${e.photos.map(ph => `<img src="data:image/jpeg;base64,${ph}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0">`).join('')}</div>`
-      : '';
     mk.bindPopup(`<div style="font-family:'DM Sans',sans-serif">
-      <div style="font-weight:700;font-size:14px;margin-bottom:6px">${TYPE_EMOJI[type]} ${e.nom}</div>
-      <div style="font-size:12px;color:#8B90B8;margin-bottom:10px">📍 ${e.quartier}</div>
-      ${galeriePopup}
-      <button onclick="naviguer(${e.lat},${e.lng},'${e.nom.replace(/'/g,"\\'")}' )"
+      <div style="font-weight:700;font-size:14px;margin-bottom:6px">${TYPE_EMOJI[type]} ${esc(e.nom)}</div>
+      <div style="font-size:12px;color:#8B90B8;margin-bottom:10px">📍 ${esc(e.quartier)}</div>
+      ${e.nb ? `<div class="gal" data-gal="${esc(e.id)}"></div><div class="gal-hint">${e.nb} photo${e.nb > 1 ? 's' : ''} · touche une photo pour l'agrandir</div>` : ''}
+      <button onclick="naviguerIdx(${i})"
         style="width:100%;padding:8px;background:linear-gradient(135deg,#F5A623,#FF8C00);color:#0A0C1B;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">
         🧭 Y aller
-      </button></div>`);
+      </button></div>`, { minWidth: 230, maxWidth: 260 });
+    mk.on('popupopen', function (ev) {
+      if (!e.nb) return;
+      const el = ev.popup.getElement().querySelector('[data-gal]');
+      if (el) rendreGalerie(el, e.id);
+      for (let k = 0; k < e.nb; k++) demanderPhoto(e.id, k, true);
+    });
     markers.push(mk);
   });
 }
-
 function genFiltres() {
   const quartiers = ['Tous', ...new Set(ecoles.map(e => e.quartier))];
   const wrap = document.getElementById('filtres');
@@ -762,10 +914,17 @@ window.edumapListeResultat = function(jsonStr) {
   try {
     const res = JSON.parse(jsonStr);
     if (res.ok && Array.isArray(res.ecoles)) {
-      res.ecoles.forEach(e => {
-        if (!ecoles.some(x => x.nom === e.nom && x.quartier === e.quartier)) {
-          ecoles.push({ nom: e.nom, quartier: e.quartier, lat: e.lat, lng: e.lng, photos: e.photos_base64 || [] });
-        }
+      res.ecoles.forEach(function (e, k) {
+        if (!e || typeof e.nom !== 'string') return;
+        const lat = Number(e.lat), lng = Number(e.lng);
+        if (!isFinite(lat) || !isFinite(lng)) return;
+        const quartier = String(e.quartier || '');
+        if (ecoles.some(x => x.nom === e.nom && x.quartier === quartier)) return;
+        const id = (typeof e.id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(e.id)) ? e.id : ('loc' + ecoles.length + '_' + k);
+        const inline = Array.isArray(e.photos_base64) ? e.photos_base64.filter(b64ok) : [];
+        if (inline.length) { const c = cacheDe(id); inline.forEach(function (b, j) { c.imgs[j] = b; }); }
+        const nb = Math.min(10, Math.max(Number(e.nb_photos) || 0, inline.length));
+        ecoles.push({ id: id, nom: e.nom, quartier: quartier, lat: lat, lng: lng, nb: nb });
       });
       document.getElementById('stat-total').textContent = ecoles.length;
       genFiltres();
@@ -773,7 +932,6 @@ window.edumapListeResultat = function(jsonStr) {
     }
   } catch (err) {}
 };
-
 window.edumapAjoutResultat = function(jsonStr) {
   try {
     const res = JSON.parse(jsonStr);
@@ -1122,6 +1280,42 @@ envoyerAuNatif({ type: 'edumap_list_request' });
   };
 
   rendrePhotos();
+})();
+</script>
+
+<!-- ===== Galerie photos / plein écran (afficher_photos_ecoles.py) ===== -->
+<style>
+.gal{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin-bottom:6px;-webkit-overflow-scrolling:touch}
+.gal-img,.gal-ph{flex:0 0 100%;width:100%;height:150px;border-radius:10px;scroll-snap-align:center;box-sizing:border-box}
+.gal-img{object-fit:cover}
+.gal-ph{background:#1a2036;color:#9aa3b8;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;gap:4px}
+.gal-ph span{font-size:11px}
+.gal-spin{width:26px;height:26px;border:3px solid #2a3350;border-top-color:#208AEF;border-radius:50%;animation:galspin .8s linear infinite}
+@keyframes galspin{to{transform:rotate(360deg)}}
+.gal-hint{font-size:11px;color:#8B90B8;margin-bottom:10px}
+#lb{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;background:rgba(0,0,0,.94);align-items:center;justify-content:center}
+#lb.show{display:flex}
+#lb-img{max-width:100%;max-height:82%;object-fit:contain}
+#lb-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:16px;color:#fff;font-size:14px}
+#lb-top button{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:50%;width:36px;height:36px;font-size:18px}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:50%;width:40px;height:40px;font-size:26px;line-height:1}
+#lb-prev{left:10px}#lb-next{right:10px}
+</style>
+<div id="lb">
+  <div id="lb-top"><span id="lb-count"></span><button type="button" onclick="lbFermer()">✕</button></div>
+  <button type="button" class="lb-nav" id="lb-prev" onclick="lbAller(-1)">‹</button>
+  <img id="lb-img" alt="">
+  <button type="button" class="lb-nav" id="lb-next" onclick="lbAller(1)">›</button>
+</div>
+<script>
+(function () {
+  var lb = document.getElementById('lb'), x0 = null;
+  lb.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  lb.addEventListener('touchend', function (e) {
+    if (x0 === null) return;
+    var dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if (Math.abs(dx) > 50) lbAller(dx < 0 ? 1 : -1);
+  }, { passive: true });
 })();
 </script>
 </body>
