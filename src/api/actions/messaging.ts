@@ -166,9 +166,13 @@ export async function chercherUtilisateur(
 ): Promise<any> {
   const valeur = identifiant.trim();
   const ressembleANumero = /^\+?\d+$/.test(valeur);
+  // Identifiant TermChat (ex : TC01051234567) : le serveur le cherche dans le champ « numero ».
+  const estIdentifiantTermChat = /^TC\d{6,}$/i.test(valeur);
   return sendRequest(
-    ressembleANumero
-      ? { action: 'chercher', numero: valeur }
-      : { action: 'chercher', pseudo: valeur }
+    estIdentifiantTermChat
+      ? { action: 'chercher', numero: valeur.toUpperCase() }
+      : ressembleANumero
+        ? { action: 'chercher', numero: valeur }
+        : { action: 'chercher', pseudo: valeur }
   );
 }
