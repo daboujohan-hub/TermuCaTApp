@@ -6,10 +6,7 @@ import {
   Image,
   Pressable,
   RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+  StyleSheet, Text, TextInput, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -20,6 +17,8 @@ import type { ConversationItem, PushNotification } from '@/api/protocol';
 export default function DiscussionsScreen() {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recherche, setRecherche] = useState('');
+  const [rechercheOuverte, setRechercheOuverte] = useState(false);
 
   const charger = useCallback(async () => {
     const res = await mesConversations();
@@ -41,6 +40,34 @@ export default function DiscussionsScreen() {
     });
     return unsub;
   }, [charger]);
+
+  const nomPropre = (c: ConversationItem) =>
+    (c.nom || c.numero || '').replace(/\s+/g, ' ').trim() || c.numero;
+
+  const heureAffichee = (h?: string) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(h ?? '');
+    if (!m) return h ?? '';
+    const [, annee, mois, jour, heures, minutes] = m;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const formater = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const auj = new Date();
+    const hier = new Date(auj.getTime() - 24 * 60 * 60 * 1000);
+    const date = `${annee}-${mois}-${jour}`;
+    if (date === formater(auj)) return `${heures}:${minutes}`;
+    if (date === formater(hier)) return 'Hier';
+    return `${jour}/${mois}/${annee.slice(2)}`;
+  };
+
+  const conversationsAffichees = recherche.trim()
+    ? conversations.filter((c) => {
+        const q = recherche.trim().toLowerCase();
+        return (
+          nomPropre(c).toLowerCase().includes(q) ||
+          (c.numero ?? '').toLowerCase().includes(q) ||
+          (c.chiffre ? '' : (c.dernier_msg ?? '')).toLowerCase().includes(q)
+        );
+      })
+    : conversations;
 
   const ouvrirConversation = (numero: string, nom?: string) => {
     router.push(`/chat/${encodeURIComponent(numero)}?nom=${encodeURIComponent(nom ?? '')}`);
@@ -79,7 +106,7 @@ export default function DiscussionsScreen() {
           </View>
         </View>
         <View style={styles.headerRight}>
-          <Pressable style={styles.iconBtn} onPress={() => router.push('/search' as any)}>
+          <Pressable style={styles.iconBtn} onPress={() => { setRechercheOuverte((o) => !o); setRecherche(''); }}>
             <Ionicons name="search-outline" size={20} color="#111827" />
           </Pressable>
           <Pressable style={styles.newBtn} onPress={() => router.push('/search' as any)}>
@@ -88,8 +115,21 @@ export default function DiscussionsScreen() {
         </View>
       </View>
 
+      {rechercheOuverte && (
+        <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#FFFFFF' }}>
+          <TextInput
+            value={recherche}
+            onChangeText={setRecherche}
+            placeholder="Rechercher une conversation"
+            placeholderTextColor="#9CA3AF"
+            autoFocus
+            autoCorrect={false}
+            style={{ backgroundColor: '#F6F6F7', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, color: '#111827' }}
+          />
+        </View>
+      )}
       <FlatList
-        data={conversations}
+        data={conversationsAffichees}
         keyExtractor={(item) => item.numero}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={charger} />}
         ListEmptyComponent={
@@ -108,12 +148,12 @@ export default function DiscussionsScreen() {
             onLongPress={() => confirmerSuppression(item)}
           >
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{(item.nom || item.numero)[0]?.toUpperCase()}</Text>
+              <Text style={styles.avatarText}>{nomPropre(item)[0]?.toUpperCase()}</Text>
             </View>
             <View style={styles.rowContent}>
               <View style={styles.rowTop}>
-                <Text style={styles.rowName} numberOfLines={1}>{item.nom || item.numero}</Text>
-                <Text style={[styles.rowTime, item.non_lus > 0 && styles.rowTimeUnread]}>{item.heure}</Text>
+                <Text style={styles.rowName} numberOfLines={1}>{nomPropre(item)}</Text>
+                <Text style={[styles.rowTime, item.non_lus > 0 && styles.rowTimeUnread]}>{heureAffichee(item.heure)}</Text>
               </View>
               <View style={styles.rowBottom}>
                 <Text style={styles.rowMsg} numberOfLines={1}>
