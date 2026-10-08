@@ -1157,6 +1157,13 @@ envoyerAuNatif({ type: 'edumap_list_request' });
     }
   }
 
+  function typeImage(b64) {
+    if (b64.indexOf('iVBOR') === 0) return 'image/png';
+    if (b64.indexOf('UklGR') === 0) return 'image/webp';
+    if (b64.indexOf('R0lGO') === 0) return 'image/gif';
+    return 'image/jpeg';
+  }
+
   function compresser(b64) {
     return new Promise(function (resolve) {
       var img = new Image();
@@ -1175,7 +1182,7 @@ envoyerAuNatif({ type: 'edumap_list_request' });
         resolve(out);
       };
       img.onerror = function () { resolve(null); };
-      img.src = 'data:image/jpeg;base64,' + b64;
+      img.src = 'data:' + typeImage(b64) + ';base64,' + b64;
     });
   }
 
@@ -1262,7 +1269,19 @@ envoyerAuNatif({ type: 'edumap_list_request' });
   var photosOrig = window.edumapPhotosResultat;
   window.edumapPhotosResultat = function (donnees) {
     if (window.__photosCible !== 'proposition') {
-      if (photosOrig) return photosOrig.apply(this, arguments);
+      if (!photosOrig) return;
+      var contexteAppel = this, brut = [];
+      try { brut = typeof donnees === 'string' ? JSON.parse(donnees) : donnees; } catch (e) {}
+      if (!Array.isArray(brut) || !brut.length) return photosOrig.call(contexteAppel, donnees);
+      var prepares = [];
+      brut.reduce(function (suite, b64) {
+        return suite.then(function () {
+          return compresser(b64).then(function (out) { if (out) prepares.push(out); });
+        });
+      }, Promise.resolve()).then(function () {
+        if (prepares.length < brut.length && typeof toast === 'function') toast('⚠️', "Une photo n'a pas pu être lue.");
+        photosOrig.call(contexteAppel, JSON.stringify(prepares));
+      });
       return;
     }
     window.__photosCible = null;
@@ -1273,7 +1292,7 @@ envoyerAuNatif({ type: 'edumap_list_request' });
     liste.slice(0, place).reduce(function (suite, b64) {
       return suite.then(function () {
         return compresser(b64).then(function (out) {
-          if (out) photos.push({ b64: out, taille: tailleOctets(out) });
+          if (out) photos.push({ b64: out, taille: tailleOctets(out) }); else message("Une photo n'a pas pu être lue (format non pris en charge).", true);
         });
       });
     }, Promise.resolve()).then(rendrePhotos);
@@ -1316,6 +1335,16 @@ envoyerAuNatif({ type: 'edumap_list_request' });
     var dx = e.changedTouches[0].clientX - x0; x0 = null;
     if (Math.abs(dx) > 50) lbAller(dx < 0 ? 1 : -1);
   }, { passive: true });
+})();
+</script>
+
+<script>
+(function () {
+  var btn = document.getElementById('prop-btn');
+  var ab = document.getElementById('admin-backdrop');
+  function maj() { if (btn) btn.style.display = (ab && ab.classList.contains('show')) ? 'none' : ''; }
+  if (ab && window.MutationObserver) new MutationObserver(maj).observe(ab, { attributes: true, attributeFilter: ['class'] });
+  maj();
 })();
 </script>
 </body>
