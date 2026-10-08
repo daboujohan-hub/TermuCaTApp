@@ -23,7 +23,7 @@ type TotpForm = z.infer<typeof totpSchema>;
 
 export default function LoginScreen() {
   const { numeroGenere } = useLocalSearchParams<{ numeroGenere?: string }>();
-  const { status, loading, error, login, verifyTotp, clearError } = useSessionStore();
+  const { status, loading, error, login, verifyTotp, clearError, logout } = useSessionStore();
   const [totpVisible, setTotpVisible] = useState(false);
   const [mdpVisible, setMdpVisible] = useState(false);
 
@@ -124,7 +124,14 @@ export default function LoginScreen() {
 
               <Pressable style={[styles.button, loading && styles.buttonDisabled]} onPress={handleTotpSubmit(onSubmitTotp)} disabled={loading}>
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Vérifier</Text>}
-              </Pressable>
+            </Pressable>
+
+            <Pressable style={styles.linkWrap} onPress={() => { logout(); setTotpVisible(false); }}>
+              <Text style={styles.link}>Retour à la connexion</Text>
+            </Pressable>
+            <Pressable style={styles.linkWrap} onPress={() => router.push('/contact' as any)}>
+              <Text style={styles.link}>J'ai perdu mon application d'authentification</Text>
+            </Pressable>
             </>
           )}
         </ScrollView>

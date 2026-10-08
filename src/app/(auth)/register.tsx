@@ -19,7 +19,10 @@ const registerSchema = z
     nom: z.string().min(1, 'Requis').max(15, 'Trop long'),
     pseudo: z.string().min(3, '3 à 20 caractères').max(20, '3 à 20 caractères')
       .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, 'Doit commencer par une lettre, puis lettres/chiffres/_'),
-    mdp: z.string().min(12, 'Minimum 12 caractères'),
+    mdp: z.string().min(12, 'Minimum 12 caractères').refine(
+      (v) => [/[a-z]/, /[A-Z]/, /[0-9]/, /[^a-zA-Z0-9]/].filter((r) => r.test(v)).length >= 3,
+      'Utilise au moins 3 types : minuscule, majuscule, chiffre, symbole'
+    ),
   })
   .refine((data) => `${data.prenom} ${data.nom}`.trim().length <= 20, {
     message: 'Prénom + Nom : 20 caractères max au total', path: ['nom'],
@@ -115,7 +118,14 @@ export default function RegisterScreen() {
             ) : <Text style={styles.buttonText}>S'inscrire</Text>}
           </Pressable>
 
-          <Link href="/(auth)/login" asChild>
+          <Text style={[styles.hint, { textAlign: 'center', marginTop: 16 }]}>
+              En t'inscrivant, tu acceptes les{' '}
+              <Text style={styles.link} onPress={() => router.push('/terms' as any)}>Conditions d'utilisation</Text>
+              {' '}et la{' '}
+              <Text style={styles.link} onPress={() => router.push('/privacy' as any)}>Politique de confidentialité</Text>.
+            </Text>
+
+            <Link href="/(auth)/login" asChild>
             <Pressable style={styles.linkWrap}>
               <Text style={styles.link}>Déjà un compte ? Se connecter</Text>
             </Pressable>
