@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 import {
   STATUTS, COULEURS, changerStatut, changerCouleur, modifierBio, definirPseudo,
@@ -34,6 +35,31 @@ export default function EditProfileScreen() {
   const [enregistrement, setEnregistrement] = useState(false);
   const [chargementPhoto, setChargementPhoto] = useState(false);
 
+  // Réduit la photo (512 px puis plus petit si besoin) et la convertit en JPEG sous la limite du serveur.
+  const preparerPhotoProfil = async (uri: string): Promise<string | null> => {
+    const IM: any = ImageManipulator;
+    const essais: Array<[number, number]> = [[512, 0.7], [384, 0.5], [256, 0.5]];
+    for (const [largeur, qualite] of essais) {
+      let base64: string | undefined;
+      if (typeof IM.manipulateAsync === 'function') {
+        const r = await IM.manipulateAsync(uri, [{ resize: { width: largeur } }], {
+          compress: qualite, format: IM.SaveFormat.JPEG, base64: true,
+        });
+        base64 = r?.base64;
+      } else {
+        const contexte = IM.ImageManipulator.manipulate(uri);
+        contexte.resize({ width: largeur });
+        const image = await contexte.renderAsync();
+        const r = await image.saveAsync({ compress: qualite, format: IM.SaveFormat.JPEG, base64: true });
+        base64 = r?.base64;
+      }
+      if (!base64) return null;
+      const pad = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
+      if (Math.floor((base64.length * 3) / 4) - pad <= MAX_PHOTO_OCTETS) return base64;
+    }
+    return null;
+  };
+
   const choisirPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
@@ -43,13 +69,12 @@ export default function EditProfileScreen() {
     setChargementPhoto(true);
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.5, base64: true,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 1,
       });
-      if (result.canceled || !result.assets?.[0]?.base64) return;
-      const base64 = result.assets[0].base64;
-      const taille = Math.floor((base64.length * 3) / 4);
-      if (taille > MAX_PHOTO_OCTETS) {
-        Alert.alert('Photo trop lourde', 'Choisis une photo plus légère (max 400 Ko après compression).');
+      if (result.canceled || !result.assets?.[0]?.uri) return;
+      const base64 = await preparerPhotoProfil(result.assets[0].uri);
+      if (!base64) {
+        Alert.alert('Photo illisible', "Impossible de préparer cette photo. Essaie une autre image.");
         return;
       }
       setPhoto(`data:image/jpeg;base64,${base64}`);
@@ -71,7 +96,7 @@ export default function EditProfileScreen() {
       if (photoModifiee) {
         if (photo) {
           const base64Pur = photo.split(',')[1] ?? photo;
-          const taille = Math.floor((base64Pur.length * 3) / 4);
+          const taille = Math.floor((base64Pur.length * 3) / 4) - (base64Pur.endsWith('==') ? 2 : base64Pur.endsWith('=') ? 1 : 0);
           const res = await definirPhotoProfil(base64Pur, taille);
           if (estErreur(res)) { Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
           maj.photo_profil = photo;
