@@ -101,13 +101,6 @@ export default function EduMapScreen() {
       } catch (e: any) {
         envoyerAuWebView('edumapListeResultat', { ok: false, msg: e?.message ?? 'Erreur reseau.' });
       }
-    } else if (msg.type === 'edumap_add') {
-      try {
-        const res = await sendRequest({ ...msg.payload, action: 'edumap_ajouter_ecole' } as any);
-        envoyerAuWebView('edumapAjoutResultat', res);
-      } catch (e: any) {
-        envoyerAuWebView('edumapAjoutResultat', { ok: false, msg: e?.message ?? 'Erreur reseau.' });
-      }
     } else if (msg.type === 'geoloc_request') {
       demanderPosition(msg.contexte ?? 'utilisateur');
     } else if (msg.type === 'edumap_photo_request') {
