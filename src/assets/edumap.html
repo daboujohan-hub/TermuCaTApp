@@ -486,7 +486,7 @@ body::before {
 
 <header class="header">
   <div class="logo">
-    <div class="logo-icon" onclick="tapLogo()">🏫</div>
+    <div class="logo-icon">🏫</div>
     <div class="logo-text">
       EduMap
       <span>San Pedro · Côte d'Ivoire</span>
@@ -543,28 +543,7 @@ body::before {
   <span id="toast-msg"></span>
 </div>
 
-<div class="admin-backdrop" id="admin-backdrop">
-  <div class="admin-sheet">
-    <div id="admin-step-password">
-      <div class="admin-title">🔒 Accès administrateur</div>
-      <input class="admin-input" id="admin-mdp1" type="password" placeholder="Mot de passe">
-      <input class="admin-input" id="admin-mdp2" type="password" placeholder="Confirmer le mot de passe">
-      <div class="admin-erreur" id="admin-mdp-erreur" style="display:none"></div>
-      <button class="admin-btn" onclick="validerMdpAdmin()">Continuer</button>
-      <div class="admin-close" onclick="fermerAdmin()">Annuler</div>
-    </div>
-    <div id="admin-step-form" style="display:none">
-      <div class="admin-title">🏫 Ajouter une école</div>
-      <input class="admin-input" id="admin-nom" type="text" placeholder="Nom de l'école">
-      <input class="admin-input" id="admin-quartier" type="text" placeholder="Quartier / adresse">
-      <div id="admin-gps-statut" style="color:var(--texte2);font-size:12px;margin-bottom:10px">📡 Position GPS: en attente…</div>
-      <div id="admin-photos-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
-      <div class="admin-erreur" id="admin-form-erreur" style="display:none"></div>
-      <button class="admin-btn" id="admin-submit-btn" onclick="soumettreEcole()">Enregistrer l'école</button>
-      <div class="admin-close" onclick="fermerAdmin()">Annuler</div>
-    </div>
-  </div>
-</div>
+
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
@@ -865,19 +844,12 @@ window.edumapPositionResultat = function(contexte, lat, lng) {
     document.getElementById('btn-loc').classList.add('actif');
     toast('✅','Position trouvée !');
     filtrer();
-  } else if (contexte === 'admin') {
-    adminPositionGPS = { lat, lng };
-    const el = document.getElementById('admin-gps-statut');
-    if (el) el.textContent = '✅ Position GPS trouvée';
   }
 };
 
 window.edumapPositionErreur = function(contexte) {
   if (contexte === 'utilisateur') {
     toast('❌','Impossible de vous localiser');
-  } else if (contexte === 'admin') {
-    const el = document.getElementById('admin-gps-statut');
-    if (el) el.textContent = '❌ Position GPS indisponible';
   }
 };
 
@@ -932,149 +904,6 @@ window.edumapListeResultat = function(jsonStr) {
     }
   } catch (err) {}
 };
-window.edumapAjoutResultat = function(jsonStr) {
-  try {
-    const res = JSON.parse(jsonStr);
-    const btn = document.getElementById('admin-submit-btn');
-    if (btn) { btn.disabled = false; btn.textContent = "Enregistrer l'école"; }
-    if (res.ok) {
-      toast('✅', res.msg || 'École ajoutée !');
-      fermerAdmin();
-      envoyerAuNatif({ type: 'edumap_list_request' });
-    } else {
-      const err = document.getElementById('admin-form-erreur');
-      err.textContent = res.msg || 'Erreur inconnue.';
-      err.style.display = 'block';
-    }
-  } catch (err) {}
-};
-
-// ─── Mode admin (tap 5x sur le logo) ───────────────
-let tapCount = 0, tapTimer = null;
-function tapLogo() {
-  tapCount++;
-  clearTimeout(tapTimer);
-  tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
-  if (tapCount >= 5) {
-    tapCount = 0;
-    ouvrirAdmin();
-  }
-}
-
-let adminPositionGPS = null, adminPhotos = [], adminMdpConfirme = null;
-const ADMIN_MAX_PHOTOS = 5;
-
-function rendreAdminPhotos() {
-  const row = document.getElementById('admin-photos-row');
-  if (!row) return;
-  row.innerHTML = '';
-  adminPhotos.forEach((ph, i) => {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'position:relative;width:64px;height:64px';
-    wrap.innerHTML = `
-      <img src="data:image/jpeg;base64,${ph.base64}" style="width:64px;height:64px;object-fit:cover;border-radius:10px">
-      <div onclick="retirerPhotoAdmin(${i})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:10px;background:#FF4B6E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer">✕</div>`;
-    row.appendChild(wrap);
-  });
-  if (adminPhotos.length < ADMIN_MAX_PHOTOS) {
-    const ajout = document.createElement('div');
-    ajout.className = 'admin-photo-preview';
-    ajout.style.cssText = 'width:64px;height:64px;margin-bottom:0';
-    ajout.textContent = '📷';
-    ajout.onclick = () => envoyerAuNatif({ type: 'edumap_pick_photos', restant: ADMIN_MAX_PHOTOS - adminPhotos.length });
-    row.appendChild(ajout);
-  }
-}
-
-function retirerPhotoAdmin(i) {
-  adminPhotos.splice(i, 1);
-  rendreAdminPhotos();
-}
-
-function tailleBase64(b64) {
-  // Le calcul standard (longueur * 3/4) surestime de 1 ou 2 octets si la
-  // chaine se termine par du padding ('=' ou '=='), ce qui faisait echouer
-  // la verification stricte cote serveur (taille annoncee != taille reelle).
-  let padding = 0;
-  if (b64.endsWith('==')) padding = 2;
-  else if (b64.endsWith('=')) padding = 1;
-  return Math.floor((b64.length * 3) / 4) - padding;
-}
-
-window.edumapPhotosResultat = function(jsonStr) {
-  try {
-    const photos = JSON.parse(jsonStr);
-    const place = ADMIN_MAX_PHOTOS - adminPhotos.length;
-    photos.slice(0, place).forEach(base64 => {
-      adminPhotos.push({ base64, taille: tailleBase64(base64) });
-    });
-    rendreAdminPhotos();
-  } catch (err) {}
-};
-
-function ouvrirAdmin() {
-  document.getElementById('admin-backdrop').classList.add('show');
-  document.getElementById('admin-step-password').style.display = 'block';
-  document.getElementById('admin-step-form').style.display = 'none';
-  document.getElementById('admin-mdp1').value = '';
-  document.getElementById('admin-mdp2').value = '';
-  document.getElementById('admin-mdp-erreur').style.display = 'none';
-}
-
-function fermerAdmin() {
-  document.getElementById('admin-backdrop').classList.remove('show');
-  adminPhotos = [];
-  rendreAdminPhotos();
-  document.getElementById('admin-nom').value = '';
-  document.getElementById('admin-quartier').value = '';
-}
-
-function validerMdpAdmin() {
-  const m1 = document.getElementById('admin-mdp1').value;
-  const m2 = document.getElementById('admin-mdp2').value;
-  const err = document.getElementById('admin-mdp-erreur');
-  if (!m1 || m1 !== m2) {
-    err.textContent = 'Les deux mots de passe ne correspondent pas.';
-    err.style.display = 'block';
-    return;
-  }
-  adminMdpConfirme = m1;
-  document.getElementById('admin-step-password').style.display = 'none';
-  document.getElementById('admin-step-form').style.display = 'block';
-  document.getElementById('admin-gps-statut').textContent = '📡 Position GPS: recherche…';
-  envoyerAuNatif({ type: 'geoloc_request', contexte: 'admin' });
-  rendreAdminPhotos();
-}
-
-function soumettreEcole() {
-  const nom = document.getElementById('admin-nom').value.trim();
-  const quartier = document.getElementById('admin-quartier').value.trim();
-  const err = document.getElementById('admin-form-erreur');
-  err.style.display = 'none';
-  if (!nom || !quartier) {
-    err.textContent = 'Nom et quartier requis.';
-    err.style.display = 'block';
-    return;
-  }
-  if (!adminPositionGPS) {
-    err.textContent = 'Position GPS non disponible, réessaie.';
-    err.style.display = 'block';
-    return;
-  }
-  const btn = document.getElementById('admin-submit-btn');
-  btn.disabled = true;
-  btn.textContent = 'Enregistrement…';
-  envoyerAuNatif({
-    type: 'edumap_add',
-    payload: {
-      mot_de_passe: adminMdpConfirme,
-      nom, quartier,
-      lat: adminPositionGPS.lat, lng: adminPositionGPS.lng,
-      photos: adminPhotos.map(p => p.base64),
-      photos_tailles: adminPhotos.map(p => p.taille),
-    }
-  });
-}
 
 document.getElementById('stat-total').textContent = ecoles.length;
 genFiltres();
