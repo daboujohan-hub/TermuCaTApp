@@ -37,7 +37,9 @@ export default function LoginScreen() {
     defaultValues: { code: '' },
   });
 
-  const onSubmit = async (data: LoginForm) => { clearError(); await login(data.identifiant.trim(), data.mdp); };
+  const onSubmit = async (data: LoginForm) => { clearError(); const id = data.identifiant.trim();
+    const idNormalise = /^tc\d+$/i.test(id) ? id.toUpperCase() : id;
+    await login(idNormalise, data.mdp); };
   const onSubmitTotp = async (data: TotpForm) => { clearError(); await verifyTotp(data.code); };
 
   if (status === 'attente_2fa' && !totpVisible) setTotpVisible(true);
@@ -64,7 +66,7 @@ export default function LoginScreen() {
           {!!numeroGenere && !totpVisible && (
             <View style={styles.numeroGenereBox}>
               <Text style={styles.numeroGenereText}>
-                Compte créé ! Ton identifiant : <Text style={styles.numeroGenereBold}>{numeroGenere}</Text>
+                Compte créé ! Ton identifiant : <Text selectable style={styles.numeroGenereBold}>{numeroGenere}</Text>
               </Text>
             </View>
           )}
@@ -100,7 +102,11 @@ export default function LoginScreen() {
                 ) : <Text style={styles.buttonText}>Se connecter</Text>}
               </Pressable>
 
-              <Link href="/(auth)/register" asChild>
+              <Pressable style={styles.linkWrap} onPress={() => router.push('/contact' as any)}>
+              <Text style={styles.link}>Mot de passe oublié ? Contacter l'assistance</Text>
+            </Pressable>
+
+            <Link href="/(auth)/register" asChild>
                 <Pressable style={styles.linkWrap}>
                   <Text style={styles.link}>Pas encore de compte ? S'inscrire</Text>
                 </Pressable>
