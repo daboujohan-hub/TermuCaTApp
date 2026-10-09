@@ -25,6 +25,7 @@ import {
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
+import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
@@ -53,6 +54,48 @@ function formaterDuree(secondes: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+// Heure d'un message : « 17:06 » (accepte « 2026-10-06T17:06:05.655123 », « 2026-10-06 17:06 » ou une date ISO en « Z »).
+function heureMessage(h?: string): string {
+  if (!h) return '';
+  if (/Z$|[+-]\d{2}:\d{2}$/.test(h)) {
+    const d = new Date(h.replace(/(\.\d{3})\d+/, '$1'));
+    if (!isNaN(d.getTime())) {
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+  }
+  const m = /(?:T|\s)(\d{2}):(\d{2})/.exec(h);
+  return m ? `${m[1]}:${m[2]}` : '';
+}
+
+// Liens cliquables dans les messages (ouverture dans le navigateur intégré, avec confirmation).
+const REGEX_LIEN = /((?:https?:\/\/|www\.)[^\s<>"']*[^\s<>"'.,;:!?)\]])/gi;
+
+function ouvrirLien(brut: string) {
+  const url = /^https?:\/\//i.test(brut) ? brut : `https://${brut}`;
+  const site = /^https?:\/\/([^/?#:]+)/i.exec(url)?.[1] ?? url;
+  Alert.alert('Ouvrir ce lien ?', `${site}\n\nNe l'ouvre que si tu connais la personne qui te l'a envoyé.`, [
+    { text: 'Annuler', style: 'cancel' },
+    {
+      text: 'Ouvrir',
+      onPress: () => {
+        WebBrowser.openBrowserAsync(url).catch(() => Alert.alert('Erreur', "Impossible d'ouvrir ce lien."));
+      },
+    },
+  ]);
+}
+
+function rendreTexteAvecLiens(texte: string) {
+  return String(texte ?? '').split(REGEX_LIEN).map((morceau, i) =>
+    i % 2 === 1 ? (
+      <Text key={i} style={{ color: '#2F80ED', textDecorationLine: 'underline' }} onPress={() => ouvrirLien(morceau)}>
+        {morceau}
+      </Text>
+    ) : (
+      morceau
+    )
+  );
+}
+
 function formaterTaille(octets: number): string {
   if (octets < 1024) return `${octets} o`;
   if (octets < 1024 * 1024) return `${(octets / 1024).toFixed(0)} Ko`;
@@ -61,7 +104,7 @@ function formaterTaille(octets: number): string {
 
 export default function ChatScreen() {
   const { numero, nom } = useLocalSearchParams<{ numero: string; nom?: string }>();
-  const nomAffiche = nom || numero;
+  const nomAffiche = (nom || numero || '').toString().replace(/\s+/g, ' ').trim();
   const insets = useSafeAreaInsets();
   const user = useSessionStore((s) => s.user);
   const [messages, setMessages] = useState<MessageItem[]>([]);
@@ -618,7 +661,7 @@ export default function ChatScreen() {
                     <Text style={styles.bubbleText}>{vocauxExpires.has(item.id) ? 'Vocal expiré' : `Vocal · ${formaterDuree(item.duree ?? 0)}`}</Text>
                   </Pressable>
                 ) : (
-                  <Text style={styles.bubbleText}>{item.texte}</Text>
+                  <Text style={styles.bubbleText}>{rendreTexteAvecLiens(item.texte)}</Text>
                 )}
                 <View style={styles.bubbleFooter}>
                   {item.enAttente ? (
@@ -629,7 +672,7 @@ export default function ChatScreen() {
                   ) : (
                     <View style={styles.enAttenteRow}>
                       {item.chiffre && <Ionicons name="lock-closed" size={9} color="#9CA3AF" />}
-                      <Text style={styles.bubbleTime}>{item.heure?.slice(-8, -3) || ''}</Text>
+                      <Text style={styles.bubbleTime}>{heureMessage(item.heure)}</Text>
                     </View>
                   )}
                   {sortant && !item.enAttente && (
