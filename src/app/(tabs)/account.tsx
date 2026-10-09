@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 
 import { useSessionStore } from '@/store/sessionStore';
 
@@ -26,9 +27,16 @@ export default function AccountScreen() {
   const statutCouleur = COULEURS_STATUT[user?.statut ?? 'disponible'] ?? '#9CA3AF';
   const statutLabel = LABELS_STATUT[user?.statut ?? 'disponible'] ?? 'Disponible';
 
+  const partagerIdentifiant = () => {
+    if (!user?.numero) return;
+    Share.share({ message: `Retrouve-moi sur TermChat ! Mon identifiant : ${user.numero}` }).catch(() => {});
+  };
+
   const seDeconnecter = () => {
-    logout();
-    router.replace('/welcome' as any);
+    Alert.alert('Se déconnecter ?', 'Tu devras ressaisir ton identifiant et ton mot de passe pour te reconnecter.', [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Se déconnecter', style: 'destructive', onPress: () => { logout(); router.replace('/welcome' as any); } },
+    ]);
   };
 
   return (
@@ -54,15 +62,15 @@ export default function AccountScreen() {
             )}
             <View style={[styles.statutDot, { backgroundColor: statutCouleur }]} />
           </View>
-          <Text style={styles.nom}>{user?.nom ?? '—'}</Text>
-          <Text style={styles.pseudo}>@{user?.pseudo ?? '—'} · {user?.numero ?? '—'}</Text>
+          <Text style={styles.nom}>{(user?.nom ?? '—').replace(/\s+/g, ' ').trim()}</Text>
+          <Text selectable style={styles.pseudo}>@{user?.pseudo ?? '—'} · {user?.numero ?? '—'}</Text>
           <Text style={styles.statutLabel}>{statutLabel}</Text>
           {!!user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
-          <View style={styles.badge}>
+          <Pressable style={styles.badge} onPress={() => router.push('/abonnement' as any)}>
             <Text style={styles.badgeText}>
               {user?.premium ? '⭐ ' + (user.premium_type ?? 'Premium') : '🆓 Compte gratuit'}
             </Text>
-          </View>
+          </Pressable>
 
           <Pressable style={styles.editBtn} onPress={() => router.push('/edit-profile' as any)}>
             <Ionicons name="create-outline" size={15} color="#111827" />
@@ -71,6 +79,14 @@ export default function AccountScreen() {
         </View>
 
         <View style={styles.menu}>
+          <Pressable style={styles.row} onPress={partagerIdentifiant}>
+            <View style={styles.rowIconWrap}>
+              <Ionicons name="share-social-outline" size={18} color="#2F80ED" />
+            </View>
+            <Text style={styles.rowLabel}>Partager mon identifiant</Text>
+            <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
+          </Pressable>
+
           <Pressable style={styles.row} onPress={() => router.push('/settings' as any)}>
             <View style={styles.rowIconWrap}>
               <Ionicons name="settings-outline" size={18} color="#2F80ED" />
@@ -102,6 +118,9 @@ export default function AccountScreen() {
             <Text style={[styles.rowLabel, styles.logoutText]}>Se déconnecter</Text>
           </Pressable>
         </View>
+      <Text style={{ textAlign: 'center', color: '#C7C7CC', fontSize: 12, marginTop: 24 }}>
+          TermChat v{Constants.expoConfig?.version ?? '1.0.0'}
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
