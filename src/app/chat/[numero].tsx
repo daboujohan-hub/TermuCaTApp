@@ -23,6 +23,8 @@ import {
   type AudioPlayer,
 } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Clipboard from 'expo-clipboard';
+import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
@@ -408,6 +410,58 @@ export default function ChatScreen() {
     ]);
   };
 
+  const ouvrirProfil = () => {
+    if (!numero) return;
+    router.push({ pathname: '/contact-profil', params: { numero, nom: nomAffiche ?? '' } } as any);
+  };
+
+  const partagerVocal = async (item: MessageItem) => {
+    try {
+      let uri = item.uriLocal;
+      if (uri) {
+        const infoLocal = await FileSystem.getInfoAsync(uri);
+        if (!infoLocal.exists) uri = undefined;
+      }
+      if (!uri) {
+        if (!numero) return;
+        const cible = `${FileSystem.cacheDirectory ?? ''}${item.id}.m4a`;
+        const info = await FileSystem.getInfoAsync(cible);
+        if (!(info.exists && (info.size ?? 0) > 0)) {
+          const res = await telechargerVocal(numero, item.id);
+          if (estErreur(res)) {
+            Alert.alert('Vocal indisponible', res.msg || "Ce message vocal n'est plus disponible.");
+            return;
+          }
+          await FileSystem.writeAsStringAsync(cible, res.contenu, { encoding: FileSystem.EncodingType.Base64 });
+        }
+        uri = cible;
+      }
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('Partage impossible', "Le partage de fichiers n'est pas disponible sur cet appareil.");
+        return;
+      }
+      await Sharing.shareAsync(uri, { mimeType: 'audio/mp4', dialogTitle: 'Enregistrer ou partager le vocal' });
+    } catch {
+      Alert.alert('Erreur', 'Impossible de partager ce vocal.');
+    }
+  };
+
+  const menuMessage = (item: MessageItem) => {
+    if (item.enAttente) return;
+    const boutons: any[] = [];
+    if (item.type === 'texte' && item.texte) {
+      boutons.push({ text: 'Copier', onPress: () => { Clipboard.setStringAsync(item.texte); } });
+    } else if (item.type === 'vocal') {
+      boutons.push({ text: 'Enregistrer / partager', onPress: () => partagerVocal(item) });
+    }
+    if (item.de === user?.numero) {
+      boutons.push({ text: 'Supprimer', style: 'destructive', onPress: () => confirmerSuppression(item) });
+    }
+    if (!boutons.length) return;
+    boutons.push({ text: 'Annuler', style: 'cancel' });
+    Alert.alert('Message', undefined, boutons);
+  };
+
   const ouvrirMenuContact = () => {
     Alert.alert(nomAffiche ?? 'Contact', undefined, [
       { text: 'Annuler', style: 'cancel' },
@@ -531,9 +585,9 @@ export default function ChatScreen() {
           <Ionicons name="chevron-back" size={24} color="#111827" />
         </Pressable>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{nomAffiche?.[0]?.toUpperCase()}</Text>
+          <Text style={styles.avatarText} onPress={ouvrirProfil}>{nomAffiche?.[0]?.toUpperCase()}</Text>
         </View>
-        <Text style={styles.headerTitle} numberOfLines={1}>{nomAffiche}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1} onPress={ouvrirProfil}>{nomAffiche}</Text>
         <Pressable onPress={ouvrirMenuContact} hitSlop={10} style={{ marginLeft: 'auto', padding: 4 }}>
           <Ionicons name="ellipsis-vertical" size={20} color="#111827" />
         </Pressable>
@@ -549,7 +603,7 @@ export default function ChatScreen() {
           renderItem={({ item }) => {
             const sortant = item.de === user?.numero;
             return (
-              <View style={[styles.bubble, sortant ? styles.bubbleOut : styles.bubbleIn]}>
+              <Pressable onLongPress={() => menuMessage(item)} delayLongPress={350} style={[styles.bubble, sortant ? styles.bubbleOut : styles.bubbleIn]}>
                 {item.type === 'fichier' ? (
                   <View style={styles.fileRow}>
                     <Ionicons name="document-attach-outline" size={16} color="#111827" />
@@ -584,7 +638,7 @@ export default function ChatScreen() {
                     </Pressable>
                   )}
                 </View>
-              </View>
+              </Pressable>
             );
           }}
         />
