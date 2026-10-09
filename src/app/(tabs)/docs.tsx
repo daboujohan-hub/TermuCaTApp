@@ -8,6 +8,8 @@ const RUBRIQUES: { icon: keyof typeof Ionicons.glyphMap; titre: string; sous: st
   { icon: 'mail-outline', titre: 'Nous contacter', sous: "Envoyer un message à l'équipe", route: '/contact' },
   { icon: 'warning-outline', titre: 'Signaler un problème', sous: 'Aide technique', route: '/report' },
   { icon: 'document-text-outline', titre: "Conditions d'utilisation", sous: 'Vos droits et obligations', route: '/terms' },
+  { icon: 'star-outline', titre: 'Abonnement Premium', sous: 'Avantages et tarif', route: '/abonnement' },
+  { icon: 'heart-outline', titre: 'Soutenir TermChat', sous: 'Faire un don', route: '/soutenir' },
   { icon: 'lock-closed-outline', titre: 'Politique de confidentialité', sous: 'Protection de vos données', route: '/privacy' },
   { icon: 'information-circle-outline', titre: 'À propos de TermChat', sous: 'Notre mission et informations', route: '/about' },
 ];

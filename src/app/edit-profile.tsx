@@ -98,36 +98,36 @@ export default function EditProfileScreen() {
           const base64Pur = photo.split(',')[1] ?? photo;
           const taille = Math.floor((base64Pur.length * 3) / 4) - (base64Pur.endsWith('==') ? 2 : base64Pur.endsWith('=') ? 1 : 0);
           const res = await definirPhotoProfil(base64Pur, taille);
-          if (estErreur(res)) { Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
-          maj.photo_profil = photo;
+          if (estErreur(res)) { if (Object.keys(maj).length > 0) updateUser(maj); Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
+          maj.photo_profil = photo; setPhotoModifiee(false);
         } else {
           const res = await supprimerPhotoProfil();
-          if (estErreur(res)) { Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
-          maj.photo_profil = null;
+          if (estErreur(res)) { if (Object.keys(maj).length > 0) updateUser(maj); Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
+          maj.photo_profil = null; setPhotoModifiee(false);
         }
       }
 
       if (pseudo.trim() && pseudo.trim() !== user?.pseudo) {
         const res = await definirPseudo(pseudo.trim());
-        if (estErreur(res)) { Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
+        if (estErreur(res)) { if (Object.keys(maj).length > 0) updateUser(maj); Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
         maj.pseudo = pseudo.trim();
       }
 
       if (bio.trim() !== (user?.bio ?? '')) {
         const res = await modifierBio(bio.trim());
-        if (estErreur(res)) { Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
+        if (estErreur(res)) { if (Object.keys(maj).length > 0) updateUser(maj); Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
         maj.bio = bio.trim();
       }
 
       if (statut !== user?.statut) {
         const res = await changerStatut(statut);
-        if (estErreur(res)) { Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
+        if (estErreur(res)) { if (Object.keys(maj).length > 0) updateUser(maj); Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
         maj.statut = statut;
       }
 
       if (couleur !== user?.couleur) {
         const res = await changerCouleur(couleur);
-        if (estErreur(res)) { Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
+        if (estErreur(res)) { if (Object.keys(maj).length > 0) updateUser(maj); Alert.alert('Erreur', res.msg); setEnregistrement(false); return; }
         maj.couleur = couleur;
       }
 
