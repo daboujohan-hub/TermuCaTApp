@@ -5,15 +5,20 @@ import { sendRequest } from '@/api/request';
 
 // Cache mémoire des clés publiques déjà récupérées (évite une requête "chercher" par message)
 const cacheClesPubliques = new Map<string, string | null>();
+// Échecs récents (clé introuvable) : on ne réessaie pas avant 60 s, mais on ne les garde plus pour toute la session.
+const echecsRecents = new Map<string, number>();
 
 async function getClePubliqueContact(numeroContact: string): Promise<string | null> {
   if (cacheClesPubliques.has(numeroContact)) {
     return cacheClesPubliques.get(numeroContact)!;
   }
+  const dernierEchec = echecsRecents.get(numeroContact);
+  if (dernierEchec && Date.now() - dernierEchec < 60000) return null;
   try {
     const res: any = await sendRequest({ action: 'chercher', numero: numeroContact });
     const cle = res?.ok ? res.user?.cle_publique ?? null : null;
-    cacheClesPubliques.set(numeroContact, cle);
+    if (cle) cacheClesPubliques.set(numeroContact, cle);
+    else echecsRecents.set(numeroContact, Date.now());
     return cle;
   } catch {
     return null;

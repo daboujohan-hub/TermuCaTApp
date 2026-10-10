@@ -46,6 +46,7 @@ import type { MessageItem, PushNotification } from '@/api/protocol';
 import { useSessionStore } from '@/store/sessionStore';
 
 const MAX_FICHIER_OCTETS = 5 * 1024 * 1024;
+const conversationsAvertiesNonChiffrees = new Set<string>();
 // V1 : l'envoi de fichiers est désactivé (la réception n'est pas encore disponible).
 const FICHIERS_ACTIFS = false;
 
@@ -243,6 +244,10 @@ export default function ChatScreen() {
     try {
       const { texte: texteEnvoi, chiffre } = await chiffrerPourContact(contenu, user.numero, numero);
       const res = await envoyerMessage(numero, texteEnvoi, chiffre);
+      if (!estErreur(res) && !chiffre && !conversationsAvertiesNonChiffrees.has(numero)) {
+        conversationsAvertiesNonChiffrees.add(numero);
+        Alert.alert('Message non chiffré', "Ton contact n'a pas encore de clé de chiffrement : ce message est parti sans chiffrement de bout en bout. Les messages chiffrés portent un petit cadenas.");
+      }
       if (estErreur(res)) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         Alert.alert('Erreur', res.msg);
