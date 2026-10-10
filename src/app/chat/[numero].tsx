@@ -23,8 +23,8 @@ import {
   type AudioPlayer,
 } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as Clipboard from 'expo-clipboard';
-import * as Sharing from 'expo-sharing';
+
+
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -94,6 +94,25 @@ function rendreTexteAvecLiens(texte: string) {
       morceau
     )
   );
+}
+
+// Modules natifs chargés à la demande : un téléphone sans la dernière version ne plante plus à l'ouverture de l'écran.
+function moduleOptionnel(nom: 'expo-clipboard' | 'expo-sharing'): any {
+  try {
+    if (nom === 'expo-clipboard') return require('expo-clipboard');
+    return require('expo-sharing');
+  } catch {
+    return null;
+  }
+}
+
+function copierTexte(texte: string) {
+  const C = moduleOptionnel('expo-clipboard');
+  if (!C) {
+    Alert.alert('Mise à jour nécessaire', "Installe la dernière version de l'application pour copier un message.");
+    return;
+  }
+  Promise.resolve(C.setStringAsync(texte)).catch(() => {});
 }
 
 function formaterTaille(octets: number): string {
@@ -479,7 +498,8 @@ export default function ChatScreen() {
         }
         uri = cible;
       }
-      if (!(await Sharing.isAvailableAsync())) {
+      const Sharing = moduleOptionnel('expo-sharing');
+      if (!Sharing || !(await Sharing.isAvailableAsync())) {
         Alert.alert('Partage impossible', "Le partage de fichiers n'est pas disponible sur cet appareil.");
         return;
       }
@@ -493,7 +513,7 @@ export default function ChatScreen() {
     if (item.enAttente) return;
     const boutons: any[] = [];
     if (item.type === 'texte' && item.texte) {
-      boutons.push({ text: 'Copier', onPress: () => { Clipboard.setStringAsync(item.texte); } });
+      boutons.push({ text: 'Copier', onPress: () => { copierTexte(item.texte); } });
     } else if (item.type === 'vocal') {
       boutons.push({ text: 'Enregistrer / partager', onPress: () => partagerVocal(item) });
     }

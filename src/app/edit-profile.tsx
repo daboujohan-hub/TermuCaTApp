@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
+
 
 import {
   STATUTS, COULEURS, changerStatut, changerCouleur, modifierBio, definirPseudo,
@@ -37,7 +37,9 @@ export default function EditProfileScreen() {
 
   // Réduit la photo (512 px puis plus petit si besoin) et la convertit en JPEG sous la limite du serveur.
   const preparerPhotoProfil = async (uri: string): Promise<string | null> => {
-    const IM: any = ImageManipulator;
+    let IM: any = null;
+    try { IM = require('expo-image-manipulator'); } catch {}
+    if (!IM) throw new Error("Mise à jour nécessaire : installe la dernière version de l'application pour changer ta photo.");
     const essais: Array<[number, number]> = [[512, 0.7], [384, 0.5], [256, 0.5]];
     for (const [largeur, qualite] of essais) {
       let base64: string | undefined;
