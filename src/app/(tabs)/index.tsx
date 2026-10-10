@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { mesConversations, effacerHistorique, estErreur } from '@/api/actions/messaging';
 import termchatSocket from '@/api/socket';
+import AvatarContact from '@/components/AvatarContact';
 import type { ConversationItem, PushNotification } from '@/api/protocol';
 
 export default function DiscussionsScreen() {
@@ -147,9 +148,7 @@ export default function DiscussionsScreen() {
             onPress={() => ouvrirConversation(item.numero, item.nom)}
             onLongPress={() => confirmerSuppression(item)}
           >
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{nomPropre(item)[0]?.toUpperCase()}</Text>
-            </View>
+            <AvatarContact numero={item.numero} nom={nomPropre(item)} taille={50} />
             <View style={styles.rowContent}>
               <View style={styles.rowTop}>
                 <Text style={styles.rowName} numberOfLines={1}>{nomPropre(item)}</Text>

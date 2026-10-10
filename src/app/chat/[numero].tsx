@@ -23,6 +23,7 @@ import {
   type AudioPlayer,
 } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
+import AvatarContact from '@/components/AvatarContact';
 
 
 import * as WebBrowser from 'expo-web-browser';
@@ -647,9 +648,9 @@ export default function ChatScreen() {
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="chevron-back" size={24} color="#111827" />
         </Pressable>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText} onPress={ouvrirProfil}>{nomAffiche?.[0]?.toUpperCase()}</Text>
-        </View>
+        <Pressable onPress={ouvrirProfil} hitSlop={6}>
+          <AvatarContact numero={numero} nom={nomAffiche} taille={42} />
+        </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1} onPress={ouvrirProfil}>{nomAffiche}</Text>
         <Pressable onPress={ouvrirMenuContact} hitSlop={10} style={{ marginLeft: 'auto', padding: 4 }}>
           <Ionicons name="ellipsis-vertical" size={20} color="#111827" />

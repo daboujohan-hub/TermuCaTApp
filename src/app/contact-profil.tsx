@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { sendRequest } from '@/api/request';
 import { bloquerUtilisateur, signalerUtilisateur } from '@/api/actions/account';
+import { enregistrerPhotoEnCache } from '@/hooks/use-photo-profil';
 
 type Profil = {
   numero: string; nom: string; pseudo: string; bio: string; statut: string;
@@ -31,7 +32,10 @@ export default function ContactProfilScreen() {
       try {
         const r: any = await sendRequest<{ action: string; numero: string }, any>({ action: 'profil_contact', numero: String(numero ?? '') });
         if (annule) return;
-        if (r?.ok && r.profil) setProfil(r.profil as Profil);
+        if (r?.ok && r.profil) {
+          setProfil(r.profil as Profil);
+          enregistrerPhotoEnCache(String(numero ?? ''), r.profil.photo_base64 ?? null);
+        }
         else setErreur(r?.msg ?? 'Profil non disponible.');
       } catch (e: any) {
         if (!annule) setErreur(e?.message ?? 'Erreur réseau.');
