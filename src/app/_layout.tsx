@@ -14,7 +14,7 @@ export default function RootLayout() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <ConnectionBanner />
       <Stack screenOptions={{ headerShown: false }} />
     </>

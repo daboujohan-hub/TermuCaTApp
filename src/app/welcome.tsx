@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import MarqueDevDaj from '@/components/MarqueDevDaj';
 export default function WelcomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
@@ -19,6 +20,7 @@ export default function WelcomeScreen() {
           <Text style={styles.secondaryBtnText}>Se connecter</Text>
         </Pressable>
       </View>
+      <MarqueDevDaj />
     </SafeAreaView>
   );
 }

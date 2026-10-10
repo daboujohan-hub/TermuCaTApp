@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { setStatusBarStyle } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
 import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +13,14 @@ import { sendRequest } from '@/api/request';
 
 export default function EduMapScreen() {
   const webviewRef = useRef<WebView>(null);
+
+  // Écran sombre : icônes de la barre d'état claires tant que cet onglet est affiché.
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle('dark');
+    }, [])
+  );
   const [html, setHtml] = useState<string | null>(null);
 
   useEffect(() => {
