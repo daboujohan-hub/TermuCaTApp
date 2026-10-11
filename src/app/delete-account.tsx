@@ -17,7 +17,7 @@ export default function DeleteAccountScreen() {
     try {
       const res = await supprimerCompte(mdp);
       if (res?.ok) {
-        Alert.alert('Compte supprimé', 'Ton compte a été désactivé. À bientôt.', [
+        Alert.alert('Suppression programmée', 'Ton compte est désactivé. Tes données seront effacées définitivement dans 30 jours.', [
           {
             text: 'OK',
             onPress: () => {
@@ -62,7 +62,8 @@ export default function DeleteAccountScreen() {
           <Text style={styles.warnText}>
             • Ton compte est désactivé immédiatement : tu ne pourras plus te connecter.{'\n'}
             • Ton abonnement premium prend fin avec ton compte.{'\n'}
-            • Tes contacts ne pourront plus t'écrire.
+            • Tes contacts ne pourront plus t'écrire.{'\n'}
+            • Tes données (profil, photo, conversations) seront effacées définitivement après 30 jours. Pour annuler, contacte l'assistance avant cette date.
           </Text>
         </View>
         <Text style={styles.label}>Mot de passe</Text>
