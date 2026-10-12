@@ -46,6 +46,9 @@ import type { MessageItem, PushNotification } from '@/api/protocol';
 import { useSessionStore } from '@/store/sessionStore';
 
 const MAX_FICHIER_OCTETS = 5 * 1024 * 1024;
+// Vocaux : mono, 32 kbit/s (voix claire, ~250 Ko par minute) et durée maximale de 2 minutes.
+const OPTIONS_VOCAL = { ...RecordingPresets.HIGH_QUALITY, numberOfChannels: 1, sampleRate: 22050, bitRate: 32000 };
+const DUREE_MAX_VOCAL = 120;
 const conversationsAvertiesNonChiffrees = new Set<string>();
 // V1 : l'envoi de fichiers est désactivé (la réception n'est pas encore disponible).
 const FICHIERS_ACTIFS = false;
@@ -140,8 +143,9 @@ export default function ChatScreen() {
   const [lecture, setLecture] = useState<{ id: string } | null>(null);
   const [vocauxExpires, setVocauxExpires] = useState<Set<string>>(new Set());
   const listRef = useRef<FlatList>(null);
-  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const audioRecorder = useAudioRecorder(OPTIONS_VOCAL);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const demarrageRef = useRef(false);
   const playTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playersRef = useRef<Map<string, AudioPlayer>>(new Map());
   const previewPlayerRef = useRef<AudioPlayer | null>(null);
@@ -227,8 +231,13 @@ export default function ChatScreen() {
       if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
       playersRef.current.forEach((p) => { try { p.remove(); } catch {} });
       playersRef.current.clear();
+      try { if ((audioRecorder as any).isRecording) audioRecorder.stop(); } catch {}
     };
   }, []);
+
+  useEffect(() => {
+    if (enregistrementActif && dureeEnregistrement >= DUREE_MAX_VOCAL) arreterEnregistrement();
+  }, [enregistrementActif, dureeEnregistrement]);
 
   const envoyer = async () => {
     const contenu = texte.trim();
@@ -320,6 +329,8 @@ export default function ChatScreen() {
   };
 
   const demarrerEnregistrement = async () => {
+    if (demarrageRef.current || enregistrementActif) return;
+    demarrageRef.current = true;
     try {
       const perm = await AudioModule.requestRecordingPermissionsAsync();
       if (!perm.granted) {
@@ -334,6 +345,8 @@ export default function ChatScreen() {
       timerRef.current = setInterval(() => setDureeEnregistrement((d) => d + 1), 1000);
     } catch (e: any) {
       Alert.alert('Erreur', e?.message ?? "Impossible de démarrer l'enregistrement.");
+    } finally {
+      demarrageRef.current = false;
     }
   };
 
@@ -701,11 +714,6 @@ export default function ChatScreen() {
                       <Text style={styles.bubbleTime}>{heureMessage(item.heure)}</Text>
                     </View>
                   )}
-                  {sortant && !item.enAttente && (
-                    <Pressable onPress={() => confirmerSuppression(item)} hitSlop={8}>
-                      <Ionicons name="trash-outline" size={13} color="#9CA3AF" />
-                    </Pressable>
-                  )}
                 </View>
               </Pressable>
             );
@@ -719,7 +727,7 @@ export default function ChatScreen() {
             </Pressable>
             <View style={styles.recordingInfo}>
               <View style={styles.recordingDot} />
-              <Text style={styles.recordingText}>Enregistrement… {formaterDuree(dureeEnregistrement)} (relâche pour arrêter)</Text>
+              <Text style={styles.recordingText}>Enregistrement… {formaterDuree(dureeEnregistrement)} / {formaterDuree(DUREE_MAX_VOCAL)}</Text>
             </View>
             <Pressable style={styles.sendBtn} onPress={arreterEnregistrement}>
               <Ionicons name="checkmark" size={20} color="#fff" />
@@ -755,7 +763,7 @@ export default function ChatScreen() {
           </View>
         ) : (
           <View style={[styles.inputRow, { paddingBottom: 10 + insets.bottom }]}>
-            <Pressable style={styles.attachBtn} onPress={choisirFichier} disabled={envoiFichierEnCours}>
+            <Pressable style={styles.attachBtn} onPress={choisirFichier} disabled={envoiFichierEnCours} accessibilityLabel="Joindre un fichier">
               <Ionicons name="attach-outline" size={20} color="#8E8E93" />
             </Pressable>
             <TextInput
@@ -767,16 +775,11 @@ export default function ChatScreen() {
               multiline
             />
             {texte.trim().length === 0 ? (
-              <Pressable
-                style={styles.sendBtn}
-                onLongPress={demarrerEnregistrement}
-                onPressOut={() => { if (enregistrementActif) arreterEnregistrement(); }}
-                delayLongPress={180}
-              >
+              <Pressable style={styles.sendBtn} onPress={demarrerEnregistrement} accessibilityLabel="Enregistrer un message vocal">
                 <Ionicons name="mic-outline" size={19} color="#fff" />
               </Pressable>
             ) : (
-              <Pressable style={styles.sendBtn} onPress={envoyer} disabled={envoiEnCours}>
+              <Pressable style={styles.sendBtn} onPress={envoyer} disabled={envoiEnCours} accessibilityLabel="Envoyer le message">
                 <Ionicons name="send" size={17} color="#fff" />
               </Pressable>
             )}
@@ -812,17 +815,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 10,
     borderTopWidth: 1, borderTopColor: '#F0F0F0', backgroundColor: '#FFFFFF',
   },
-  attachBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#F6F6F7', alignItems: 'center', justifyContent: 'center' },
+  attachBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F6F6F7', alignItems: 'center', justifyContent: 'center' },
   input: {
     flex: 1, backgroundColor: '#F6F6F7', borderRadius: 20,
     paddingHorizontal: 14, paddingVertical: 10, fontSize: 14.5, color: '#111827', maxHeight: 100,
   },
-  sendBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#2F80ED', alignItems: 'center', justifyContent: 'center' },
+  sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#2F80ED', alignItems: 'center', justifyContent: 'center' },
   recordingRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10,
     borderTopWidth: 1, borderTopColor: '#F0F0F0', backgroundColor: '#FFFFFF',
   },
-  recordingCancel: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  recordingCancel: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   recordingInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   previewInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   recordingDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#EF4444' },
