@@ -103,13 +103,6 @@ export default function AccountScreen() {
             <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
           </Pressable>
 
-          <Pressable style={styles.row} onPress={() => router.push('/docs' as any)}>
-            <View style={styles.rowIconWrap}>
-              <Ionicons name="help-circle-outline" size={18} color="#2F80ED" />
-            </View>
-            <Text style={styles.rowLabel}>Aide</Text>
-            <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
-          </Pressable>
 
           <Pressable style={styles.row} onPress={seDeconnecter}>
             <View style={[styles.rowIconWrap, styles.rowIconWrapDanger]}>

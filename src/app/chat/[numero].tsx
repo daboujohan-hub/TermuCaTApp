@@ -1,3 +1,4 @@
+import { afficherErreur } from '@/components/MessageHost';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -83,7 +84,7 @@ function ouvrirLien(brut: string) {
     {
       text: 'Ouvrir',
       onPress: () => {
-        WebBrowser.openBrowserAsync(url).catch(() => Alert.alert('Erreur', "Impossible d'ouvrir ce lien."));
+        WebBrowser.openBrowserAsync(url).catch(() => afficherErreur("Impossible d'ouvrir ce lien."));
       },
     },
   ]);
@@ -259,14 +260,14 @@ export default function ChatScreen() {
       }
       if (estErreur(res)) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
-        Alert.alert('Erreur', res.msg);
+        afficherErreur(res.msg);
         setTexte(contenu);
       } else {
         setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, id: res.msg_id, chiffre, enAttente: false } : m)));
       }
     } catch (e: any) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      Alert.alert('Erreur réseau', e?.message ?? 'Impossible d\'envoyer le message.');
+      afficherErreur(e?.message ?? 'Impossible d\'envoyer le message.');
       setTexte(contenu);
     } finally {
       setEnvoiEnCours(false);
@@ -293,7 +294,7 @@ export default function ChatScreen() {
       }
       setFichierPret({ uri: asset.uri, nom: asset.name, taille: asset.size ?? 0 });
     } catch (e: any) {
-      Alert.alert('Erreur', e?.message ?? "Impossible de charger le fichier.");
+      afficherErreur(e?.message ?? "Impossible de charger le fichier.");
     }
   };
 
@@ -316,13 +317,13 @@ export default function ChatScreen() {
       const res = await envoyerFichier(numero, nom, base64, tailleFinale);
       if (estErreur(res)) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
-        Alert.alert('Erreur', res.msg);
+        afficherErreur(res.msg);
       } else {
         setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, id: res.msg_id, enAttente: false } : m)));
       }
     } catch (e: any) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      Alert.alert('Erreur', e?.message ?? "Impossible d'envoyer le fichier.");
+      afficherErreur(e?.message ?? "Impossible d'envoyer le fichier.");
     } finally {
       setEnvoiFichierEnCours(false);
     }
@@ -344,7 +345,7 @@ export default function ChatScreen() {
       setEnregistrementActif(true);
       timerRef.current = setInterval(() => setDureeEnregistrement((d) => d + 1), 1000);
     } catch (e: any) {
-      Alert.alert('Erreur', e?.message ?? "Impossible de démarrer l'enregistrement.");
+      afficherErreur(e?.message ?? "Impossible de démarrer l'enregistrement.");
     } finally {
       demarrageRef.current = false;
     }
@@ -367,7 +368,7 @@ export default function ChatScreen() {
       if (dureeFinale < 1) { Alert.alert('Trop court', "L'enregistrement est trop court."); return; }
       setVocalPret({ uri, duree: dureeFinale });
     } catch (e: any) {
-      Alert.alert('Erreur', e?.message ?? "Impossible de terminer l'enregistrement.");
+      afficherErreur(e?.message ?? "Impossible de terminer l'enregistrement.");
     }
   };
 
@@ -396,7 +397,7 @@ export default function ChatScreen() {
       setPreviewEnLecture(true);
       setTimeout(() => setPreviewEnLecture(false), (vocalPret.duree + 0.4) * 1000);
     } catch (e: any) {
-      Alert.alert('Erreur', "Impossible de lire l'aperçu.");
+      afficherErreur("Impossible de lire l'aperçu.");
     }
   };
 
@@ -422,13 +423,13 @@ export default function ChatScreen() {
       const res = await envoyerVocal(numero, base64, taille, duree);
       if (estErreur(res)) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
-        Alert.alert('Erreur', res.msg);
+        afficherErreur(res.msg);
       } else {
         setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, id: res.msg_id, enAttente: false } : m)));
       }
     } catch (e: any) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      Alert.alert('Erreur', e?.message ?? "Impossible d'envoyer le vocal.");
+      afficherErreur(e?.message ?? "Impossible d'envoyer le vocal.");
     }
   };
 
@@ -440,7 +441,7 @@ export default function ChatScreen() {
         onPress: async () => {
           if (!numero) return;
           const res = await supprimerMessage(numero, item.id);
-          if (estErreur(res)) Alert.alert('Erreur', res.msg);
+          if (estErreur(res)) afficherErreur(res.msg);
           else setMessages((prev) => prev.filter((m) => m.id !== item.id));
         },
       },
@@ -462,10 +463,10 @@ export default function ChatScreen() {
                 { text: 'OK', onPress: () => router.back() },
               ]);
             } else {
-              Alert.alert('Erreur', res?.msg ?? 'Impossible de bloquer cet utilisateur.');
+              afficherErreur(res?.msg ?? 'Impossible de bloquer cet utilisateur.');
             }
           } catch (e: any) {
-            Alert.alert('Erreur réseau', e?.message ?? 'Impossible de bloquer cet utilisateur.');
+            afficherErreur(e?.message ?? 'Impossible de bloquer cet utilisateur.');
           }
         },
       },
@@ -477,9 +478,9 @@ export default function ChatScreen() {
     try {
       const res = await signalerUtilisateur(numero, raison);
       if (res?.ok) Alert.alert('Signalement envoyé', "Merci. L'équipe va examiner ce signalement.");
-      else Alert.alert('Erreur', res?.msg ?? "Impossible d'envoyer le signalement.");
+      else afficherErreur(res?.msg ?? "Impossible d'envoyer le signalement.");
     } catch (e: any) {
-      Alert.alert('Erreur réseau', e?.message ?? "Impossible d'envoyer le signalement.");
+      afficherErreur(e?.message ?? "Impossible d'envoyer le signalement.");
     }
   };
 
@@ -524,7 +525,7 @@ export default function ChatScreen() {
       }
       await Sharing.shareAsync(uri, { mimeType: 'audio/mp4', dialogTitle: 'Enregistrer ou partager le vocal' });
     } catch {
-      Alert.alert('Erreur', 'Impossible de partager ce vocal.');
+      afficherErreur('Impossible de partager ce vocal.');
     }
   };
 
@@ -589,7 +590,7 @@ export default function ChatScreen() {
       // pas encore de fichier local : on les récupère à la demande.
       if (!uriLocal) {
         if (!numero) {
-          Alert.alert('Erreur', 'Conversation introuvable.');
+          afficherErreur('Conversation introuvable.');
           return;
         }
 
@@ -656,7 +657,7 @@ export default function ChatScreen() {
       }, ((item.duree ?? 0) + 0.4) * 1000);
     } catch (e: any) {
       console.log('Erreur lecture vocal:', e);
-      Alert.alert('Erreur', 'Impossible de récupérer ou lire le message vocal.');
+      afficherErreur('Impossible de récupérer ou lire le message vocal.');
     }
   };
 

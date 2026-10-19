@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "TermChatApp",
+    "name": "TermChat",
     "slug": "TermChatApp",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -18,14 +18,14 @@
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "blockedPermissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.SYSTEM_ALERT_WINDOW"
       ]
     },
     "web": {
@@ -60,11 +60,20 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Autoriser TermChat à accéder à tes photos pour changer ta photo de profil."
+          "photosPermission": "Autoriser TermChat à accéder à tes photos pour changer ta photo de profil.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ],
       "expo-secure-store",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/termchat_notif.mp3"
+          ]
+        }
+      ],
       "expo-sharing"
     ],
     "experiments": {
@@ -74,9 +83,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "362ce973-792a-45c8-8b0c-ec196416f9b2"
+        "projectId": "4e2cf252-e9c9-40e6-96d0-1461c8834ca3"
       }
     },
-    "owner": "abou2025s-team"
+    "owner": "aboudev"
   }
 }

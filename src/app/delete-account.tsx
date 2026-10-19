@@ -1,3 +1,4 @@
+import { afficherErreur } from '@/components/MessageHost';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -30,7 +31,7 @@ export default function DeleteAccountScreen() {
         Alert.alert('Impossible de supprimer', res?.msg ?? 'Une erreur est survenue.');
       }
     } catch (e: any) {
-      Alert.alert('Erreur réseau', e?.message ?? 'Impossible de contacter le serveur.');
+      afficherErreur(e?.message ?? 'Impossible de contacter le serveur.');
     } finally {
       setEnCours(false);
     }

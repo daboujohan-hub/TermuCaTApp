@@ -1,3 +1,4 @@
+import { afficherErreur } from '@/components/MessageHost';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -20,13 +21,22 @@ export default function DiscussionsScreen() {
   const [loading, setLoading] = useState(true);
   const [recherche, setRecherche] = useState('');
   const [rechercheOuverte, setRechercheOuverte] = useState(false);
+  const [erreurReseau, setErreurReseau] = useState(false);
 
   const charger = useCallback(async () => {
-    const res = await mesConversations();
-    if (!estErreur(res)) {
-      setConversations(res.conversations);
+    try {
+      const res = await mesConversations();
+      if (!estErreur(res)) {
+        setConversations(res.conversations);
+        setErreurReseau(false);
+      } else {
+        setErreurReseau(true);
+      }
+    } catch {
+      setErreurReseau(true);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -70,6 +80,14 @@ export default function DiscussionsScreen() {
       })
     : conversations;
 
+  const apercu = (c: ConversationItem) => {
+    if (c.chiffre) return '🔒 Message chiffré';
+    const m = (c.dernier_msg ?? '').trim();
+    if (!m) return '—';
+    if (/^vocal_/i.test(m)) return '🎤 Message vocal';
+    return m;
+  };
+
   const ouvrirConversation = (numero: string, nom?: string) => {
     router.push(`/chat/${encodeURIComponent(numero)}?nom=${encodeURIComponent(nom ?? '')}`);
   };
@@ -86,7 +104,7 @@ export default function DiscussionsScreen() {
           onPress: async () => {
             const res = await effacerHistorique(item.numero);
             if (estErreur(res)) {
-              Alert.alert('Erreur', res.msg);
+              afficherErreur(res.msg);
             } else {
               setConversations((prev) => prev.filter((c) => c.numero !== item.numero));
             }
@@ -111,7 +129,7 @@ export default function DiscussionsScreen() {
             <Ionicons name="search-outline" size={20} color="#111827" />
           </Pressable>
           <Pressable style={styles.newBtn} onPress={() => router.push('/search' as any)}>
-            <Ionicons name="add" size={22} color="#fff" />
+            <Ionicons name="add" size={26} color="#fff" />
           </Pressable>
         </View>
       </View>
@@ -137,8 +155,8 @@ export default function DiscussionsScreen() {
           !loading ? (
             <View style={styles.empty}>
               <Ionicons name="chatbubbles-outline" size={40} color="#C7C7CC" />
-              <Text style={styles.emptyText}>Aucune discussion pour l'instant.</Text>
-              <Text style={styles.emptySub}>Tape sur ＋ pour démarrer une conversation.</Text>
+              <Text style={styles.emptyText}>{erreurReseau ? 'Connexion au serveur impossible.' : "Aucune discussion pour l'instant."}</Text>
+              <Text style={styles.emptySub}>{erreurReseau ? 'Tire vers le bas pour réessayer.' : 'Tape sur + pour démarrer une conversation.'}</Text>
             </View>
           ) : null
         }
@@ -156,7 +174,7 @@ export default function DiscussionsScreen() {
               </View>
               <View style={styles.rowBottom}>
                 <Text style={styles.rowMsg} numberOfLines={1}>
-                  {item.chiffre ? '🔒 Message chiffré' : (item.dernier_msg || '—')}
+                  {apercu(item)}
                 </Text>
                 {item.non_lus > 0 && (
                   <View style={styles.badge}>
@@ -179,7 +197,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 16,
     paddingBottom: 12,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
@@ -189,9 +207,7 @@ const styles = StyleSheet.create({
   headerLogo: { width: 34, height: 34, borderRadius: 9 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: '#F6F6F7',
     alignItems: 'center',
     justifyContent: 'center',
@@ -199,9 +215,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '800', color: '#111827', letterSpacing: 0.5 },
   subtitle: { fontSize: 9.5, fontWeight: '600', color: '#2F80ED', letterSpacing: 0.8, marginTop: 1 },
   newBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: '#2F80ED',
     alignItems: 'center',
     justifyContent: 'center',

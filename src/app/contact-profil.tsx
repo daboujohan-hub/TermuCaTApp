@@ -1,3 +1,4 @@
+import { afficherErreur } from '@/components/MessageHost';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -58,9 +59,9 @@ export default function ContactProfilScreen() {
           try {
             const res = await bloquerUtilisateur(String(numero), true);
             if (res?.ok) router.replace('/(tabs)' as any);
-            else Alert.alert('Erreur', res?.msg ?? 'Impossible de bloquer cet utilisateur.');
+            else afficherErreur(res?.msg ?? 'Impossible de bloquer cet utilisateur.');
           } catch (e: any) {
-            Alert.alert('Erreur réseau', e?.message ?? 'Impossible de bloquer cet utilisateur.');
+            afficherErreur(e?.message ?? 'Impossible de bloquer cet utilisateur.');
           }
         },
       },
@@ -71,9 +72,9 @@ export default function ContactProfilScreen() {
     try {
       const res = await signalerUtilisateur(String(numero), raison);
       if (res?.ok) Alert.alert('Signalement envoyé', "Merci. L'équipe va examiner ce signalement.");
-      else Alert.alert('Erreur', res?.msg ?? "Impossible d'envoyer le signalement.");
+      else afficherErreur(res?.msg ?? "Impossible d'envoyer le signalement.");
     } catch (e: any) {
-      Alert.alert('Erreur réseau', e?.message ?? "Impossible d'envoyer le signalement.");
+      afficherErreur(e?.message ?? "Impossible d'envoyer le signalement.");
     }
   };
 

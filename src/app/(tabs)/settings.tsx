@@ -49,7 +49,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <View style={styles.optionRow}>
             <Text style={styles.optionLabel}>Notifications activées</Text>
-            <Switch value={notifications} onValueChange={basculerNotifications} disabled={chargement} trackColor={{ true: '#2F80ED' }} />
+            <Switch value={notifications} onValueChange={basculerNotifications} disabled={chargement} trackColor={{ false: '#D1D5DB', true: '#2F80ED' }} thumbColor="#FFFFFF" />
           </View>
         </View>
         <Text style={styles.hint}>
@@ -64,6 +64,14 @@ export default function SettingsScreen() {
           </Pressable>
           <Pressable style={[styles.optionRow, { borderTopWidth: 1, borderTopColor: '#E5E7EB' }]} onPress={() => router.push('/soutenir' as any)}>
             <Text style={styles.optionLabel}>Soutenir TermChat</Text>
+            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          </Pressable>
+        </View>
+
+        <Text style={styles.sectionTitle}>AIDE</Text>
+        <View style={styles.card}>
+          <Pressable style={styles.optionRow} onPress={() => router.push('/docs' as any)}>
+            <Text style={styles.optionLabel}>Aide et informations</Text>
             <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
           </Pressable>
         </View>

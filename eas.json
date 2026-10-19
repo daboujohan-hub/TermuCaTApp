@@ -16,6 +16,13 @@
     },
     "production": {
       "autoIncrement": true
+    },
+    "github": {
+      "extends": "preview",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "apk"
+      }
     }
   },
   "submit": {

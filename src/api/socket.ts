@@ -1,3 +1,4 @@
+import { erreurConviviale } from './erreurs';
 import { AppState } from 'react-native';
 
 const HOSTNAME = 'iriguchi.proxy.rlwy.net'; // Railway TCP Proxy 
@@ -140,11 +141,11 @@ class TermChatSocket {
 
       console.error('[TermChatSocket] ❌ Toutes les tentatives de connexion ont echoue');
       this.lastError = derniereErreur;
-      onError(derniereErreur);
+      onError(erreurConviviale(derniereErreur));
     } catch (e) {
       console.error('[TermChatSocket] ❌ Exception pendant connect():', e);
       this.lastError = e;
-      onError(e);
+      onError(erreurConviviale(e));
     }
   }
 

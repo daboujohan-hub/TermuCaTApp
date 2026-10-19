@@ -64,3 +64,6 @@ retirer_*.py
 ajouter_*.py
 maj_*.py
 *.apk
+*.sauvegarde
+*.backup*
+variables.env

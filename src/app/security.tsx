@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { totpSetupDemarrer, totpSetupConfirmer, estErreur } from '@/api/actions/auth';
 import { sendRequest } from '@/api/request';
 import { suspendreReconnexionAuto, reprendreReconnexionAuto } from '@/api/socket';
+import VerrouSection from '@/components/VerrouSection';
 
 type EtapeTotp = 'idle' | 'en_cours' | 'codes_recuperation' | 'desactivation';
 
@@ -125,6 +126,9 @@ export default function SecurityScreen() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.sectionTitle}>DOUBLE AUTHENTIFICATION</Text>
+        {etapeTotp === 'idle' && (
+          <Text style={styles.totpHint}>La 2FA protège ton compte même si ton mot de passe est volé.</Text>
+        )}
 
         {etapeTotp === 'idle' && (
           <>
@@ -203,6 +207,7 @@ export default function SecurityScreen() {
             <Text style={styles.annuler} onPress={() => { setEtapeTotp('idle'); setErreur(null); }}>Annuler</Text>
           </View>
         )}
+      {etapeTotp === 'idle' && <VerrouSection />}
       </ScrollView>
     </SafeAreaView>
   );

@@ -45,6 +45,12 @@ export async function activerNotifications(): Promise<boolean> {
       name: 'default',
       importance: Notifications.AndroidImportance.DEFAULT,
     });
+    await Notifications.setNotificationChannelAsync('messages_v2', {
+      name: 'Messages',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'termchat_notif.mp3',
+      vibrationPattern: [0, 250, 150, 250],
+    });
   }
 
   try {

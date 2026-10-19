@@ -7,6 +7,12 @@ import termchatSocket from './socket';
 
 const TIMEOUT_MS = 10000;
 
+// Plus la requête est lourde (vocal, photo), plus on laisse de temps : jusqu'à 60 s.
+function delaiPour(req: Record<string, any>): number {
+  const taille = Object.values(req).reduce((n: number, v: any) => n + (typeof v === 'string' ? v.length : 0), 0);
+  return Math.min(60000, TIMEOUT_MS + Math.floor(taille / 20));
+}
+
 interface RequeteEnAttente {
   resolve: (data: any) => void;
   reject: (err: Error) => void;
@@ -43,11 +49,12 @@ function installerEcouteurUnique() {
 
 async function envoyerEtAttendre<TRes>(req: Record<string, any>): Promise<TRes> {
   return new Promise((resolve, reject) => {
+    const delai = delaiPour(req);
     const timer = setTimeout(() => {
       const idx = fileAttente.findIndex((r) => r.resolve === resolve);
       if (idx !== -1) fileAttente.splice(idx, 1);
-      reject(new Error(`Aucune réponse du serveur après ${TIMEOUT_MS / 1000}s.`));
-    }, TIMEOUT_MS);
+      reject(new Error(`Aucune réponse du serveur après ${Math.round(delai / 1000)}s.`));
+    }, delai);
 
     fileAttente.push({ resolve, reject, timer });
 
@@ -66,6 +73,19 @@ async function envoyerEtAttendre<TRes>(req: Record<string, any>): Promise<TRes> 
       reject(e instanceof Error ? e : new Error(String(e)));
     }
   });
+}
+
+// Messages montrés à l'utilisateur : jamais d'adresse de serveur ni de code technique.
+function messageConvivial(brut: string): string {
+  if (/Broken pipe|EPIPE|ECONNRESET|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|Network request failed|Déconnecté|Socket non connecté/i.test(brut)) {
+    return 'Connexion impossible. Vérifie ta connexion internet et réessaie.';
+  }
+  if (/Aucune réponse/i.test(brut)) return 'Le serveur met trop de temps à répondre. Réessaie dans un instant.';
+  return brut
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/\b\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?\b/g, '')
+    .replace(/\b[\w-]+(?:\.[\w-]+)*\.(?:app|com|net|io|dev|org)(?::\d+)?\b/gi, '')
+    .trim() || 'Une erreur est survenue. Réessaie.';
 }
 
 export async function sendRequest<TReq extends { action: string }, TRes>(req: TReq, dejaReessaye = false): Promise<TRes> {
@@ -93,7 +113,7 @@ export async function sendRequest<TReq extends { action: string }, TRes>(req: TR
       return sendRequest(req, true);
     }
 
-    throw e;
+    throw new Error(messageConvivial(msg));
   }
 }
 

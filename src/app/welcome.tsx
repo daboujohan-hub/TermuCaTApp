@@ -20,7 +20,7 @@ export default function WelcomeScreen() {
           <Text style={styles.secondaryBtnText}>Se connecter</Text>
         </Pressable>
       </View>
-      <MarqueDevDaj />
+      <MarqueDevDaj enFlux />
     </SafeAreaView>
   );
 }
