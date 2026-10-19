@@ -67,3 +67,8 @@ maj_*.py
 *.sauvegarde
 *.backup*
 variables.env
+patch_app.py
+ecole_4photos_notifications_app.py
+proposer_ecole.py
+securiser_edumap.py
+.claude/
